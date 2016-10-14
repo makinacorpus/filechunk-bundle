@@ -1,0 +1,8 @@
+parameters:
+    filechunk.upload_directory: ~
+
+services:
+    filechunk_chunked_file_form_type:
+        class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
+        arguments: ['%filechunk.upload_directory%', '@session', '@router']
+        tags: [{ name: form.type }]

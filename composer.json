@@ -1,0 +1,31 @@
+{
+    "name" : "makinacorpus/filechunk-bundle",
+    "type" : "symfony-bundle",
+    "description" : "Javascript file upload widget and form type for Symfony",
+    "homepage" : "http://github.com/makinacorpus/filechunk-bundle",
+    "license" : "GPL-2",
+    "authors" : [
+        {
+            "name" : "Pierre Rineau",
+            "email" : "pierre.rineau@makina-corpus.com"
+        },
+        {
+            "name" : "Makina Corpus",
+            "homepage" : "http://makina-corpus.com"
+        }
+    ],
+    "minimum-stability" : "dev",
+    "prefer-stable" : true,
+    "require": {
+        "symfony/dependency-injection": "~2.3|~3.0",
+        "symfony/framework-bundle": "~2.3|~3.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "MakinaCorpus\\FilechunkBundle\\": ""
+        }
+    }
+}
