@@ -108,15 +108,19 @@ class FilechunkTransformer implements DataTransformerInterface
             }
         }
 
-        // Do not attempt the count on an empty array, else the reset() function
-        // will return false and validation component will break, especially
-        // when it's awaiting for a an array of File instances, the All()
-        // validator cannot deal with 'false' values
-        if (!$this->isMultiple && $ret) {
-            if (1 < count($ret)) {
-                throw new TransformationFailedException(sprintf("widget is not multiple but got %d values", count($ret)));
+        if (!$this->isMultiple) {
+            // Do not attempt the count on an empty array, else the reset()
+            // function will return false and validation component will break,
+            // especially when it's awaiting for a an array of File instances,
+            // the All() validator cannot deal with 'false' values
+            if ($ret) {
+                if (1 < count($ret)) {
+                    throw new TransformationFailedException(sprintf("widget is not multiple but got %d values", count($ret)));
+                }
+                $ret = reset($ret);
+            } else {
+                $ret = null;
             }
-            $ret = reset($ret);
         }
 
         return $ret;
