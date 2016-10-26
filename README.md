@@ -56,11 +56,96 @@ And it should probably work.
 
 # Usage
 
+## Basic usage
+
 Just use the ``MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType`` form type
 in your own form builders.
 
 Default values **MUST** be ``Symfony\Component\HttpFoundation\File\File``
 instances, values returned will also be.
+
+## Validation
+
+You may happily use the ``Symfony\Component\Validator\Constraints\File`` file
+constraint to validate you file:
+
+```php
+    $this
+        ->createFormBuilder()
+        ->add('photo', FilechunkType::class, [
+            'label' => "Photo",
+            'multiple' => false,
+            'required' => true,
+            'constraints' => [
+                new Assert\NotBlank(),
+                new Assert\File(['mimeTypes' => ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf']]),
+            ],
+        ])
+```
+
+## Caveat with multiple values
+
+When using the ``multiple`` property set to true, you cannot just apply the
+``Assert\File`` validator, if you do, since the widget will return an array
+of files the validator will fail. To get around this problem, here is a real life
+working example on how to tranform the previous example:
+
+
+```php
+    $this
+        ->createFormBuilder()
+        ->add('photo', FilechunkType::class, [
+            'label' => "Photo",
+            'multiple' => false,
+            'required' => true,
+            'constraints' => [
+                new Assert\NotBlank(),
+                new All([
+                    'constraints' => [
+                        new Assert\File(['mimeTypes' => ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf']]),
+                    ],
+                ]),
+            ],
+       ])
+```
+
+You may find a better explaination of this there [http://blog.arithm.com/2014/11/24/validating-multiple-files-in-symfony-2-5/](http://blog.arithm.com/2014/11/24/validating-multiple-files-in-symfony-2-5/)
+
+## Using validation group when working with multiple values
+
+Same as upper, but you have validation groups too, you need to cascade the groups
+in the whole validator chain, this way:
+
+```php
+    $this
+        ->createFormBuilder()
+        ->add('photo', FilechunkType::class, [
+            'label' => "Photo",
+            'multiple' => false,
+            'required' => true,
+            'constraints' => [
+                new Assert\NotBlank([
+                    'groups' => ['some', 'group'],
+                ]),
+                new All([
+                    'groups' => ['some', 'group'],
+                    'constraints' => [
+                        new Assert\File(
+                            'groups' => ['some', 'group'],
+                            'mimeTypes' => ['image/jpg', 'image/jpeg', 'image/png', 'application/pdf'],
+                        ]),
+                    ],
+                ]),
+            ],
+       ])
+```
+
+# Known issues
+
+*   on validating the form, if validation goes wrong, the file is not kept
+    when displaying the form with errors;
+
+*   form errors are not shown, god knows why.
 
 # Important notes
 

@@ -52,7 +52,7 @@ class FilechunkType extends AbstractType
      */
     private function getCustomOptionsNames()
     {
-        return ['multiple', 'token', 'default', 'chunksize', 'uri-upload', 'uri-remove', 'tpl-item', 'destination', 'maxSize'];
+        return ['multiple', 'token', 'default', 'chunksize', 'uri-upload', 'uri-remove', 'tpl-item'];
     }
 
     /**
@@ -81,23 +81,18 @@ class FilechunkType extends AbstractType
         $resolver->setDefined($this->getCustomOptionsNames());
 
         $resolver->setDefaults([
+            'compound'      => true,
             'multiple'      => false,
             'token'         => $this->getCurrentToken(),
             'chunksize'     => 1024 * 512,
             'uri-upload'    => $this->router->generate('filechunk_upload'),
             'uri-remove'    => $this->router->generate('filechunk_remove'),
-            'destination'   => null,
-            'maxSize'       => 1024 * 1024 * 50, // @todo use system configuration instead
-            'mimeTypes'     => null, // null means anything
         ]);
 
         $resolver->setAllowedTypes('token', ['null', 'string']);
         $resolver->setAllowedTypes('chunksize', ['null', 'int']);
         $resolver->setAllowedTypes('uri-upload', ['null', 'string']);
         $resolver->setAllowedTypes('uri-remove', ['null', 'string']);
-        $resolver->setAllowedTypes('destination', ['null', 'string']);
-        $resolver->setAllowedTypes('maxSize', ['null', 'int']);
-        $resolver->setAllowedTypes('mimeTypes', ['null', 'string', 'array']);
     }
 
     /**
@@ -113,9 +108,7 @@ class FilechunkType extends AbstractType
         foreach ($this->getCustomOptionsNames() as $key) {
             if (isset($options[$key])) {
                 $value = $options[$key];
-                if ('destination' === $key) {
-                    continue;
-                } else if ('multiple' === $key && $value) {
+                if ('multiple' === $key && $value) {
                     $attributes['multiple'] = 'multiple';
                 } else if ('default' === $key) {
                     $value = empty($value) ? null : json_encode($value);
@@ -126,20 +119,20 @@ class FilechunkType extends AbstractType
             }
         }
 
-        // Find file validation constraints and propagate it to the nested
-        // file element, ensuring file validation using the Symfony file
-        // validation component.
-        $fileConstraints = [];
+        // We need to replicate maxSize and mimeTypes constraints if present
+        // to be able to validate it the other side of the mirror (during the
+        // upload request).
+        $maxSize = null;
+        $mimeTypes = null;
+
         if ($options['constraints']) {
             foreach ($options['constraints'] as $key => $constraint) {
                 if ($constraint instanceof FileConstraint) {
-                    unset($options['constraints'][$key]);
-                    $fileConstraints[] = $constraint;
                     if ($constraint->maxSize) {
-                        $options['maxSize'] = $constraint->maxSize;
+                        $maxSize = $constraint->maxSize;
                     }
                     if ($constraint->mimeTypes) {
-                        $options['mimeTypes'] = $constraint->mimeTypes;
+                        $mimeTypes = $constraint->mimeTypes;
                     }
                 }
             }
@@ -154,8 +147,8 @@ class FilechunkType extends AbstractType
         // the user he's doing something forbidden before uploadign the
         // whole file.
         $this->session->set('filechunk_' . $options['token'], [
-            'maxSize'   => $options['maxSize'],
-            'mimeType'  => $options['mimeTypes'],
+            'maxSize'   => $maxSize,
+            'mimeType'  => $mimeTypes,
         ]);
 
         $builder
@@ -163,7 +156,6 @@ class FilechunkType extends AbstractType
                 'multiple'    => $options['multiple'],
                 'required'    => $options['required'],
                 'attr'        => $attributes,
-                'constraints' => $fileConstraints,
             ])
             ->add('fid', HiddenType::class, [
                 'attr'        => ['rel' => 'fid'],
