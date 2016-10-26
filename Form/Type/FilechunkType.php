@@ -81,6 +81,7 @@ class FilechunkType extends AbstractType
         $resolver->setDefined($this->getCustomOptionsNames());
 
         $resolver->setDefaults([
+            'required'      => false,
             'compound'      => true,
             'multiple'      => false,
             'token'         => $this->getCurrentToken(),
