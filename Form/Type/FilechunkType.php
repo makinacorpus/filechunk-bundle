@@ -14,6 +14,7 @@ use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Validator\Constraints\File as FileConstraint;
+use Symfony\Component\Form\CallbackTransformer;
 
 /**
  * Uses the Drupal filechunk module widget, until a brand new one exists.
@@ -168,6 +169,18 @@ class FilechunkType extends AbstractType
             ])
             ->addModelTransformer($transformer)
         ;
+
+        $builder
+            ->get('fid')
+            ->addModelTransformer(
+                new CallbackTransformer(
+                    // @todo for pure symfony forms, remove htmlentities() because twig
+                    //   autoescape will be set to on, and JSON causes problems
+                    'htmlentities',
+                    function ($value) { return $value; }
+                )
+            )
+        ;
     }
 
     /**
@@ -175,6 +188,27 @@ class FilechunkType extends AbstractType
      */
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
+        $value = &$view->vars['value'];
+
+        if (!empty($value['fid']) && empty($value['files'])) {
+            // We come from an invalidated form submission, and raw values are
+            // sent back to the widget, which it may not understand, sadly; and
+            // from this point, the data transformer is not being called back
+            // and the template cannot rebuild the file list.
+            // THIS IS A DIRTY HACK, but I'm afraid there is actually no proper
+            // way of doing working around this.
+            foreach ($form->getConfig()->getModelTransformers() as $transformer) {
+                if ($transformer instanceof FilechunkTransformer) {
+                    $value['files'] = $transformer->reverseTransform($value);
+                }
+            }
+        }
+
+        // If the widget is not multiple, the view is, and we need to convert
+        // a single file to an array containing this file for the template.
+        if (!empty($value['files']) && !is_array($value['files'])) {
+            $value['files'] = [$value['files']];
+        }
     }
 
     /**

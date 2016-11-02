@@ -59,9 +59,7 @@ class FilechunkTransformer implements DataTransformerInterface
         // be) which means we don't have any good reason to check for
         // multipleness here.
         // We keep the 'files' data for themeing (see twig template).
-        // @todo for pure symfony forms, remove htmlentities() because twig
-        //   autoescape will be set to on
-        return ['fid' => htmlentities(json_encode($hashes)), 'files' => $files];
+        return ['fid' => json_encode($hashes), 'files' => $files];
     }
 
     /**
