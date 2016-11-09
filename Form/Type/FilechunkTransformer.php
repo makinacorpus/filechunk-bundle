@@ -69,6 +69,10 @@ class FilechunkTransformer implements DataTransformerInterface
     {
         $ret = [];
 
+        // This method should not throw any exception, else the user will get
+        // it in his face in certain cases, so we are just going to remove the
+        // wrong files from the widget.
+
 // Handle delete a better way
 //         if (!empty($submitted['drop'])) {
 //             return null; // And yes, do not keep this frakking file.
@@ -95,10 +99,10 @@ class FilechunkTransformer implements DataTransformerInterface
                     // and ready to work on.
                     $target = $this->uploadDirectory . '/' . $name;
                     if (!file_exists($target)) {
-                        throw new TransformationFailedException(sprintf("%s: file does not exist", $target));
+                        continue;
                     }
                     if (md5_file($target) !== $hash) {
-                        throw new TransformationFailedException(sprintf("%s: file does not matches the given hash", $target));
+                        continue;
                     }
                 }
 
@@ -113,9 +117,10 @@ class FilechunkTransformer implements DataTransformerInterface
             // the All() validator cannot deal with 'false' values
             if ($ret) {
                 if (1 < count($ret)) {
-                    throw new TransformationFailedException(sprintf("widget is not multiple but got %d values", count($ret)));
+                    $ret = []; // Error case.
+                } else {
+                    $ret = reset($ret);
                 }
-                $ret = reset($ret);
             } else {
                 $ret = null;
             }
