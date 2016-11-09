@@ -204,6 +204,13 @@ class FilechunkType extends AbstractType
             }
         }
 
+        // And because we are using Twig with no autoescape, and that the
+        // Symfony form, let's ensure it has been escaped.
+        // $value['fid'] = rawurlencode($value['fid']);
+        // @todo FOUQUE I AM NOT HAPPY (which one of them are you then?)
+        $view->vars['fid_id'] = sprintf('%s_%s', $view->vars['id'], 'fid');
+        $view->vars['fid_name'] = sprintf('%s[%s]', $view->vars['full_name'], 'fid');
+
         // If the widget is not multiple, the view is, and we need to convert
         // a single file to an array containing this file for the template.
         if (!empty($value['files']) && !is_array($value['files'])) {
