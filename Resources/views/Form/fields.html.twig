@@ -50,3 +50,9 @@
     </div>
   {% endspaceless %}
 {%- endblock filechunk_widget %}
+
+{% block filechunk_row -%}
+  {# Makes it compatible with bootstrap 3 layouts #}
+  {% set force_error = true %}
+  {{- block('form_row') }}
+{%- endblock filechunk_row %}

@@ -82,13 +82,14 @@ class FilechunkType extends AbstractType
         $resolver->setDefined($this->getCustomOptionsNames());
 
         $resolver->setDefaults([
-            'required'      => false,
-            'compound'      => true,
-            'multiple'      => false,
-            'token'         => $this->getCurrentToken(),
-            'chunksize'     => 1024 * 512,
-            'uri-upload'    => $this->router->generate('filechunk_upload'),
-            'uri-remove'    => $this->router->generate('filechunk_remove'),
+            'required'        => false,
+            'compound'        => true,
+            'multiple'        => false,
+            'error_bubbling'  => false,
+            'token'           => $this->getCurrentToken(),
+            'chunksize'       => 1024 * 512,
+            'uri-upload'      => $this->router->generate('filechunk_upload'),
+            'uri-remove'      => $this->router->generate('filechunk_remove'),
         ]);
 
         $resolver->setAllowedTypes('token', ['null', 'string']);
