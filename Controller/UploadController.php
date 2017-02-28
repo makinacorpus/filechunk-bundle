@@ -162,6 +162,10 @@ class UploadController extends Controller
         if (empty($filename)) {
             throw $this->createAccessDeniedException();
         }
+        // File name might be encoded in base64 to avoid encoding errors
+        if ('==' === substr($filename, -2)) {
+            $filename = base64_decode($filename);
+        }
 
         // Token is optional, but if set must be valid
         $token = $request->headers->get('X-File-Token');
