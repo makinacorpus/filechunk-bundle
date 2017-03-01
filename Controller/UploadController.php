@@ -4,7 +4,6 @@ namespace MakinaCorpus\FilechunkBundle\Controller;
 
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType;
-
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
@@ -163,7 +162,7 @@ class UploadController extends Controller
             throw $this->createAccessDeniedException();
         }
         // File name might be encoded in base64 to avoid encoding errors
-        if ('==' === substr($filename, -2) || (false === strpos($filename, '.') && preg_match('#^@[a-zA-Z0-9+/]+={0,2}$#', $filename))) {
+        if ('==' === substr($filename, -2) || (false === strpos($filename, '.') && preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))) {
             $filename = base64_decode($filename);
         }
 
