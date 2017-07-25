@@ -8,12 +8,11 @@ use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\Form\FormView;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\OptionsResolver\Options;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Routing\RouterInterface;
 use Symfony\Component\Validator\Constraints\File as FileConstraint;
+use Symfony\Component\Validator\Constraints\Count as CountConstraint;
 use Symfony\Component\Form\CallbackTransformer;
 
 /**
@@ -125,8 +124,9 @@ class FilechunkType extends AbstractType
         // We need to replicate maxSize and mimeTypes constraints if present
         // to be able to validate it the other side of the mirror (during the
         // upload request).
-        $maxSize = null;
-        $mimeTypes = null;
+        $maxSize    = null;
+        $mimeTypes  = null;
+        $maxCount   = null;
 
         if ($options['constraints']) {
             foreach ($options['constraints'] as $key => $constraint) {
@@ -137,6 +137,12 @@ class FilechunkType extends AbstractType
                     if ($constraint->mimeTypes) {
                         $mimeTypes = $constraint->mimeTypes;
                     }
+                }
+                if ($constraint instanceof CountConstraint) {
+                    $maxCount = $constraint->max;
+                    // This one will also be checked by the front code to
+                    // drive the UI correctly
+                    $attributes['data-max-count'] = $maxCount;
                 }
             }
         }
@@ -152,6 +158,7 @@ class FilechunkType extends AbstractType
         $this->session->set('filechunk_' . $options['token'], [
             'maxSize'   => $maxSize,
             'mimeType'  => $mimeTypes,
+            'maxCount'  => $maxCount,
         ]);
 
         $builder
