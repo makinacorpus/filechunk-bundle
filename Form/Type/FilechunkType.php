@@ -105,6 +105,9 @@ class FilechunkType extends AbstractType
         if (function_exists('drupal_add_library')) {
             drupal_add_library('filechunk', 'widget');
         }
+        if (function_exists('drupal_page_is_cacheable')) {
+            drupal_page_is_cacheable(false);
+        }
 
         $attributes = [];
         foreach ($this->getCustomOptionsNames() as $key) {
