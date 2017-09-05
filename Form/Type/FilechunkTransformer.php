@@ -35,7 +35,7 @@ class FilechunkTransformer implements DataTransformerInterface
      */
     public function transform($value)
     {
-        if (!$value) {
+        if ($value === null || empty($value)) {
             return ['fid' => null, 'files' => []];
         }
         if (!is_array($value)) {
