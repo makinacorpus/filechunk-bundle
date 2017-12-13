@@ -102,11 +102,15 @@ class FilechunkType extends AbstractType
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        if (function_exists('drupal_add_library')) {
-            drupal_add_library('filechunk', 'widget');
-        }
-        if (function_exists('drupal_page_is_cacheable')) {
-            drupal_page_is_cacheable(false);
+        // Do not do this this ugly Drupal bridge thingy in cli, it will mostly
+        // break your custom Symfony functionnal tests.
+        if (php_sapi_name() !== 'cli') {
+            if (function_exists('drupal_static') && function_exists('drupal_add_library')) {
+                drupal_add_library('filechunk', 'widget');
+            }
+            if (function_exists('drupal_static') && function_exists('drupal_page_is_cacheable')) {
+                drupal_page_is_cacheable(false);
+            }
         }
 
         $attributes = [];
