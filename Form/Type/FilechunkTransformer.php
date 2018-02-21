@@ -72,20 +72,16 @@ class FilechunkTransformer implements DataTransformerInterface
         // This method should not throw any exception, else the user will get
         // it in his face in certain cases, so we are just going to remove the
         // wrong files from the widget.
+        if (!empty($submitted['fid'])) {
+            $filenames = json_decode($submitted['fid'], JSON_OBJECT_AS_ARRAY);
 
-// Handle delete a better way
-//         if (!empty($submitted['drop'])) {
-//             return null; // And yes, do not keep this frakking file.
-//         }
+            foreach ($filenames as $data) {
+                if (!is_array($data) || !isset($data['filename'])) {
+                    continue;
+                }
 
-        if (!empty($submitted['downgrade'])) {
-            // We are in downgrade mode, files are those from the file input.
-            $ret = $submitted['file'];
-
-        } else if (!empty($submitted['fid'])) {
-            $fileNames = json_decode($submitted['fid'], JSON_OBJECT_AS_ARRAY);
-
-            foreach ($fileNames as $name => $hash) {
+                $name = $data['filename'];
+                $hash = $data['hash'] ?? null;
 
                 // At this point, we must ensure that the file was not modified,
                 // because if the original was given, it's not stored within the

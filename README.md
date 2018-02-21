@@ -20,9 +20,8 @@ Known browsers to work:
 *   Chrome <= 49
 *   Edge <= 13
 *   IE <= 11
-*   Firefox <= 47
-*   And probably a few earlier versions, since it only uses a very small
-    subset of the FileReader API.
+*   Firefox <= 33
+*   And probably others, since it only uses a very small subset of the FileReader API.
 
 # Installation
 
@@ -30,9 +29,12 @@ Known browsers to work:
 composer require makinacorpus/filechunk-bundle
 ```
 
-For it work, the JavaScript file to use may be find in the Drupal module, that
-you should copy manually in your local assets:
-[https://github.com/makinacorpus/drupal-filechunk/blob/master/filechunk.js](https://github.com/makinacorpus/drupal-filechunk/blob/master/filechunk.js)
+Current version does not carry the associated JavaScript widget, you must install
+it from: [https://github.com/makinacorpus/filechunk-front](https://github.com/makinacorpus/filechunk-front)
+
+Optionnally, if you are working in a Drupal 7 context, you may just install the following
+module: [https://github.com/makinacorpus/drupal-filechunk](https://github.com/makinacorpus/drupal-filechunk)
+instead of manually registering the JavaScript widget.
 
 Register the routing.yml file in your ``app/routing.yml`` file:
 
@@ -140,13 +142,6 @@ in the whole validator chain, this way:
        ])
 ```
 
-# Known issues
-
-*   on validating the form, if validation goes wrong, the file is not kept
-    when displaying the form with errors;
-
-*   form errors are not shown, god knows why.
-
 # Important notes
 
 *   if you provide default values via the form data, and remove it via the UI
@@ -158,7 +153,6 @@ in the whole validator chain, this way:
     temporary folder, you need to move them manually (you cannot use the
     ``move_uploaded_file()`` PHP function;
 
-*   You need recent browsers, a downgrade was available, but has been removed
-    to be rewriting from the ground up, so please be patient for this.
+*   You need recent browsers.
 
 That's pretty much it, have fun!

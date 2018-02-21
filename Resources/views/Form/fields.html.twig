@@ -1,52 +1,16 @@
-{% macro file_preview(file) %}
-  {% spaceless %}
-    <span class="file">
-      {# This needs to be fixed #}
-      <img class="file-icon" alt="" title="{{ file.filemime }}" src="/modules/file/icons/image-x-generic.png"/>
-      <a href="{{ path(file.uri) }}" type="{{ file.filemime }}; length={{ file.filesize }}" target="_blank">
-        {{ file.filename }}
-      </a>
-    </span>
-  {% endspaceless %}
-{% endmacro %}
-
-{% macro file_remove_checkbox(file) %}
-  {% spaceless %}
-    {# <button class="filechunk-remove-checkbox btn btn-primary" type="submit" value="{{ "Remove"|trans }}">{{ "Remove"|trans }}</button> #}
-  {% endspaceless %}
-{% endmacro %}
 
 {% block filechunk_widget -%}
-  {% import _self as macros %}
   {% spaceless %}
     <div class="filechunk-widget">
       <div class="filechunk-widget-table">
         <div class="filechunk-widget-row">
           <div class="filechunk-widget-drop">
-            <span style="display: none;" class="text-muted message">{{ "Drag and drop files or click here to add more files..."|trans }}</span>
+            <span style="" class="text-muted message">{{ "Drag and drop files or click here to add more files..."|trans }}</span>
             {{ form_widget(form.file) }}
           </div>
         </div>
       </div>
-      <div class="file-progress" style="display: none;">
-        <div class="progress">
-          <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">%</div>
-        </div>
-      </div>
-      {# Temporary hack, no autoescape means broken values #}
-      {# {{ form_widget(form.fid) }} #}
-      <input type="hidden" rel="fid" name="{{ fid_name }}" id="{{ fid_id }}" value="{{ value.fid|escape }}">
-      {{ form_widget(form.downgrade) }}
-      <ul class="filechunk-thumbnail">
-        {% if value.files %}
-          {% for file in value.files %}
-            <li data-fid="{{ file.filename|escape }}">
-              {{ macros.file_preview(file) }}
-              {# {{ macros.file_remove_checkbox(file) }} #}
-            </li>
-          {% endfor %}
-        {% endif %}
-      </ul>
+      <input type="hidden" rel="fid" name="{{ fid_name }}" id="{{ fid_id }}" value="{{ value.fid|e }}">
     </div>
   {% endspaceless %}
 {%- endblock filechunk_widget %}
