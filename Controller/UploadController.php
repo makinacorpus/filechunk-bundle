@@ -197,7 +197,7 @@ class UploadController extends Controller
 
             // Validation basics
             if (!empty($options['maxSize']) && $options['maxSize'] < $filesize) {
-                return new JsonResponse(['message' => $this->translate("Maximum file size allowed is @bytes bytes", ['@bytes' => $options['maxSize']])], 403);
+                return new JsonResponse(['message' => $this->translate("Maximum file size allowed is @mega mo", ['@mega' => round($options['maxSize'] / 1024 / 1024, 1)])], 403);
             }
 // @todo This actually needs files to exists to guess
 //   and symfony does not implements a file extension mime type guesser
