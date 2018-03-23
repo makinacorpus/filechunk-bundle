@@ -165,6 +165,10 @@ class UploadController extends Controller
         if ('==' === substr($filename, -2) || (false === strpos($filename, '.') && preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))) {
             $filename = base64_decode($filename);
         }
+        // JavaScript widget will use encodeURIComponent() in which space char is
+        // encoded using %20 and not +, so we are safe to use rawurldecode() and not
+        // urldecode() here.
+        $filename = rawurldecode($filename);
 
         // Token is optional, but if set must be valid
         $token = $request->headers->get('X-File-Token');
