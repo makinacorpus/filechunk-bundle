@@ -13,7 +13,6 @@ class FileBuilder
     private $filesize;
     private $offset = 0;
     private $path;
-    private $userId;
 
     /**
      * Default constructor
@@ -22,16 +21,11 @@ class FileBuilder
      *   Target file size
      * @param string $filename
      *   Target file name
-     * @param int|string $userId
-     *   An optional unique user identifier, if set the builder will not allow
-     *   to overwrite someone else's files blindly
      * @param string $path
      *   The optional path to work in, if nothing given the system temporary
      *   directory will be used instead
-     * @param boolean $deep
-     *   Append user identifier and other information into target directory name
      */
-    public function __construct($filesize, $filename, $userId = null, $path = null)
+    public function __construct($filesize, $filename, $path = null)
     {
         if (!is_int($filesize) || !0 < $filesize) {
             throw new \InvalidArgumentException("There is no point in creating an empty file");
@@ -40,14 +34,10 @@ class FileBuilder
         if (!$path) {
             $path = sys_get_temp_dir();
         }
-        if ($userId) {
-            $path .= '/' . $userId;
-        }
 
         $this->path = $path;
         $this->filesize = (int)$filesize;
         $this->filename = $filename;
-        $this->userId = (string)$userId;
 
         $fileSystem = new Filesystem();
         $fileSystem->mkdir(dirname($this->getAbsolutePath()));
@@ -62,19 +52,7 @@ class FileBuilder
      */
     public function getAbsolutePath()
     {
-        $logicalPath = $this->path . '/' . $this->filename;
-
-        if ($this->userId) {
-            $logicalPath .= '/' . $this->userId;
-        }
-
-        $absolutePath = realpath($logicalPath);
-
-        if ($absolutePath) {
-            return $absolutePath;
-        }
-
-        return $logicalPath;
+        return $this->path.'/'.$this->filename;
     }
 
     private function deleteMetadataFile()
@@ -89,11 +67,7 @@ class FileBuilder
     {
         $metadataFile = $this->getAbsolutePath() . '.metadata.json';
 
-        $contents = json_encode([
-            'size'    => $this->filesize,
-            'offset'  => $this->offset,
-            'userId'  => $this->userId,
-        ]);
+        $contents = json_encode(['size' => $this->filesize, 'offset' => $this->offset]);
 
         $success = file_put_contents($metadataFile, $contents);
         if (!$success) {
@@ -136,10 +110,6 @@ class FileBuilder
                     throw new \RuntimeException(sprintf("%s: filesize mismatch, %d given, %d awaited", $absolutePath, $this->filesize, (int)$metadata->size));
                 }
                 $this->offset = (int)$metadata->offset;
-
-                if ($this->userId && $this->userId !== (string)$metadata->userId) {
-                    throw new \RuntimeException(sprintf("%s: user identifier mismatch, %s given, %s awaited", $absolutePath, $this->userId, $metadata->userId));
-                }
 
             } catch (\Exception $e) {
 

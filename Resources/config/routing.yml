@@ -10,8 +10,3 @@ filechunk_upload:
     defaults:
         _controller: FilechunkBundle:Upload:upload
     methods: [POST]
-
-#filechunk_test:
-#    path: /filechunk/test
-#    defaults:
-#        _controller: FilechunkBundle:Form:test

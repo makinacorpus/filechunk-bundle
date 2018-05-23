@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\File\File;
 
 class FilechunkTransformer implements DataTransformerInterface
 {
-    private $uploadDirectory;
+    private $directory;
     private $isMultiple = false;
 
     /**
@@ -21,12 +21,12 @@ class FilechunkTransformer implements DataTransformerInterface
     /**
      * Default constructor
      *
-     * @param string $uploadDirectory
+     * @param string $directory
      * @param string $isMultiple
      */
-    public function __construct($uploadDirectory, $isMultiple = false)
+    public function __construct($directory, $isMultiple = false)
     {
-        $this->uploadDirectory = $uploadDirectory;
+        $this->directory = $directory;
         $this->isMultiple = $isMultiple;
     }
 
@@ -93,7 +93,7 @@ class FilechunkTransformer implements DataTransformerInterface
                 } else {
                     // Normal operation is to check for upload files to be there
                     // and ready to work on.
-                    $target = $this->uploadDirectory . '/' . $name;
+                    $target = $this->directory.'/'.$name;
                     if (!file_exists($target)) {
                         continue;
                     }

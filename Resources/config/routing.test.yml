@@ -1,0 +1,5 @@
+
+filechunk_test:
+    path: /filechunk/test
+    defaults:
+        _controller: FilechunkBundle:Form:test

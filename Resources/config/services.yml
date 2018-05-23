@@ -1,8 +1,13 @@
 parameters:
-    filechunk.upload_directory: ~
+    filechunk.upload_directory: '' # Not null, 7.0 and typing doesn't allow explicit null
 
 services:
     filechunk_chunked_file_form_type:
         class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
-        arguments: ['%filechunk.upload_directory%', '@session', '@router']
-        tags: [{ name: form.type }]
+        arguments: ['@filechunk.session_handler', '@router']
+        tags: [{name: form.type}]
+
+    filechunk.session_handler:
+        public: true
+        class: MakinaCorpus\FilechunkBundle\FileSessionHandler
+        arguments: ['@session', '%filechunk.upload_directory%']
