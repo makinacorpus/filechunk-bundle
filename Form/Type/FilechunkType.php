@@ -12,6 +12,7 @@ use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Routing\RouterInterface;
+use Symfony\Component\Validator\Constraints\All as AllContraint;
 use Symfony\Component\Validator\Constraints\Count as CountConstraint;
 use Symfony\Component\Validator\Constraints\File as FileConstraint;
 
@@ -74,6 +75,55 @@ class FilechunkType extends AbstractType
     }
 
     /**
+     * Find and aggregate constraints we can use in the upload AJAX callback
+     */
+    private function aggregatesContraints($constraints, array &$attributes) : array
+    {
+        $maxSize = $mimeTypes = $maxCount = null;
+
+        if (!empty($constraints)) {
+            foreach ($constraints as $constraint) {
+
+                // This algorithm is stupid, and if the same constraint exists
+                // more than once, the latter will override the former.
+                if ($constraint instanceof FileConstraint) {
+                    if ($constraint->maxSize) {
+                        $maxSize = $constraint->maxSize;
+                    }
+                    if ($constraint->mimeTypes) {
+                        $mimeTypes = $constraint->mimeTypes;
+                    }
+                }
+
+                if ($constraint instanceof CountConstraint) {
+                    $maxCount = $constraint->max;
+                    // This one will also be checked by the front code to
+                    // drive the UI correctly
+                    $attributes['data-max-count'] = $maxCount;
+                }
+
+                // When field is multiple, constraints can be nested using the
+                // "All" constraint, if we want to have working upload validator
+                // behavior, we must catch them as well
+                if ($constraint instanceof AllContraint) {
+                    list($nestedMaxSize, $nestedMimeTypes, $nestedMaxCount) = $this->aggregatesContraints($constraint->constraints, $attributes);
+                    if ($nestedMaxSize) {
+                        $maxSize = $nestedMaxSize;
+                    }
+                    if ($nestedMimeTypes) {
+                        $mimeTypes = $mimeTypes;
+                    }
+                    if ($nestedMaxCount) {
+                        $maxCount = $maxCount;
+                    }
+                }
+            }
+        }
+
+        return [$maxSize, $mimeTypes, $maxCount];
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function buildForm(FormBuilderInterface $builder, array $options)
@@ -114,25 +164,7 @@ class FilechunkType extends AbstractType
         // We need to replicate maxSize and mimeTypes constraints if present
         // to be able to validate it the other side of the mirror (during the
         // upload request).
-        $maxSize = $mimeTypes = $maxCount = null;
-        if ($options['constraints']) {
-            foreach ($options['constraints'] as $key => $constraint) {
-                if ($constraint instanceof FileConstraint) {
-                    if ($constraint->maxSize) {
-                        $maxSize = $constraint->maxSize;
-                    }
-                    if ($constraint->mimeTypes) {
-                        $mimeTypes = $constraint->mimeTypes;
-                    }
-                }
-                if ($constraint instanceof CountConstraint) {
-                    $maxCount = $constraint->max;
-                    // This one will also be checked by the front code to
-                    // drive the UI correctly
-                    $attributes['data-max-count'] = $maxCount;
-                }
-            }
-        }
+        list($maxSize, $mimeTypes, $maxCount) = $this->aggregatesContraints($options['constraints'], $attributes);
 
         // This actually should not be out of this class, but for readability
         // reasons, I'd prefer it to get out and make this class shorter.
