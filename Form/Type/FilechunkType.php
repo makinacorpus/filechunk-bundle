@@ -77,7 +77,7 @@ class FilechunkType extends AbstractType
     /**
      * Find and aggregate constraints we can use in the upload AJAX callback
      */
-    private function aggregatesContraints($constraints, array &$attributes) : array
+    private function aggregatesContraints($constraints, array &$attributes)
     {
         $maxSize = $mimeTypes = $maxCount = null;
 
