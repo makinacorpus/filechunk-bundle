@@ -81,7 +81,7 @@ class FilechunkTransformer implements DataTransformerInterface
                 }
 
                 $name = $data['filename'];
-                $hash = $data['hash'] ?? null;
+                $hash = isset($data['hash']) ? $data['hash'] : null;
 
                 // At this point, we must ensure that the file was not modified,
                 // because if the original was given, it's not stored within the
