@@ -1,7 +1,18 @@
 parameters:
+    # Warning, the default system temporary folder could differ between
+    # CLI and HTTP execution contextes, case in which this will not work,
+    # in most projects, you need to set this explicitely.
     filechunk.upload_directory: '' # Not null, 7.0 and typing doesn't allow explicit null
 
 services:
+
+    filechunk.command.cleanup_temporary_files:
+        class: MakinaCorpus\FilechunkBundle\Command\CleanupTemporaryFilesCommand
+        calls:
+            - [setLogger, ['@logger']]
+            - [setFileSessionHandler, ['@filechunk.session_handler']]
+        tags: [{name: console.command}]
+
     filechunk_chunked_file_form_type:
         class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
         arguments: ['@filechunk.session_handler', '@router']
