@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MakinaCorpus\FilechunkBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
-class FilechunkBundle extends Bundle
+final class FilechunkBundle extends Bundle
 {
 }

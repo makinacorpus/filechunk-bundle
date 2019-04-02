@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MakinaCorpus\FilechunkBundle\Command;
 
-use Drush\Log\LogLevel;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
+use Psr\Log\LogLevel;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -34,24 +36,22 @@ final class CleanupTemporaryFilesCommand extends Command
         $this->setName('filechunk:cleanup');
         $this->setDescription("Deletes outdated temporary files");
         $this->setDefinition([
-            new InputOption(
-                'dry-run',
-                'd',
-                InputOption::VALUE_NONE,
-                "Do not delete files, just output outdated file list."
-            ),
+            new InputOption('dry-run', 'd', InputOption::VALUE_NONE, "Do not delete files, just output outdated file list."),
         ]);
     }
 
     /**
      * Set logger
      */
-    public function setLogger(LoggerInterface $logger)
+    public function setLogger(LoggerInterface $logger): void
     {
         $this->logger = $logger;
     }
 
-    public function setFileSessionHandler(FileSessionHandler $sessionHandler)
+    /**
+     * Set file session handler
+     */
+    public function setFileSessionHandler(FileSessionHandler $sessionHandler): void
     {
         $this->sessionHandler = $sessionHandler;
     }
@@ -59,7 +59,7 @@ final class CleanupTemporaryFilesCommand extends Command
     /**
      * Log message.
      */
-    private function log(OutputInterface $output, string $message, $level = LogLevel::NOTICE)
+    private function log(OutputInterface $output, string $message, $level = LogLevel::NOTICE): void
     {
         switch ($level) {
             case LogLevel::DEBUG:
@@ -93,7 +93,7 @@ final class CleanupTemporaryFilesCommand extends Command
         }
 
         // Default file delta => 2 days
-        $threshold = time() - 2 * 24 * 3600;
+        $threshold = \time() - 2 * 24 * 3600;
         $directory = $this->sessionHandler->getUploadDirectory();
 
         if (!$directory) {

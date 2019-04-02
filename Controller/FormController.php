@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
 use MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType;
-
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
-use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\File;
 
-class FormController extends Controller
+final class FormController extends Controller
 {
-    public function testAction(Request $request)
+    public function testAction(Request $request): Response
     {
         $testFiles = [];
         foreach (['hey.jpg', 'ho.png'] as $name) {
-            $path = sys_get_temp_dir() . '/' . $name;
-            if (!file_exists($path)) {
-                file_put_contents($path, 'nan nan nan nan nan batman');
+            $path = \sys_get_temp_dir().'/'.$name;
+            if (!\file_exists($path)) {
+                \file_put_contents($path, 'nan nan nan nan nan batman');
             }
             $file = new File($path);
             $testFiles[] = $file;
@@ -56,7 +58,7 @@ class FormController extends Controller
 
         if ($form->isSubmitted() && $form->isValid()) {
             $data = $form->getData();
-            $this->addFlash('info', '<pre>' . print_r($data, true) . '</pre>');
+            $this->addFlash('info', '<pre>'.\print_r($data, true).'</pre>');
 
             return $this->redirectToRoute('filechunk_test');
         }

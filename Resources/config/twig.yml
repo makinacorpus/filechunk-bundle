@@ -1,0 +1,7 @@
+services:
+
+    filechunk.twig.extension:
+        public: false
+        class: MakinaCorpus\FilechunkBundle\Twig\FilechunkExtension
+        arguments: ["@filechunk.file_manager", "@request_stack", "%kernel.project_dir%/public"]
+        tags: ['twig.extension']

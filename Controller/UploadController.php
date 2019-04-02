@@ -1,24 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
-use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
+use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
-class UploadController extends Controller
+final class UploadController extends Controller
 {
     /**
      * Translate message
      *
-     * @param string $message
-     * @param array $args
-     *
      * @return string
      */
-    private function translate($message, $args = [])
+    private function translate(string $message, array $args = []): string
     {
         return $this->get('translator')->trans($message, $args);
     }
@@ -32,10 +32,10 @@ class UploadController extends Controller
      * @return int[]
      *   First value is range start, second is range stop, third is file size
      */
-    private function parseRange($contentRange)
+    private function parseRange($contentRange): array
     {
         $matches = [];
-        if (!preg_match('@^bytes (\d+)-(\d+)/(\d+)$@', trim($contentRange), $matches)) {
+        if (!\preg_match('@^bytes (\d+)-(\d+)/(\d+)$@', \trim($contentRange), $matches)) {
             throw $this->createAccessDeniedException(); // Invalid header
         }
 
@@ -79,7 +79,7 @@ class UploadController extends Controller
     /**
      * File chunk remove
      */
-    public function removeAction(Request $request)
+    public function removeAction(Request $request): Response
     {
         if (!$request->isMethod('POST')) {
             throw $this->createAccessDeniedException();
@@ -109,7 +109,7 @@ class UploadController extends Controller
     /**
      * Validate uploaded file using session token.
      */
-    private function validateUploadedFile(FileSessionHandler $sessionHandler, Request $request, string $token, string $fieldname = '', int $filesize = 0)
+    private function validateUploadedFile(FileSessionHandler $sessionHandler, Request $request, string $token, string $fieldname = '', int $filesize = 0): ?string
     {
         if (!$sessionHandler->isTokenValid($token)) {
             throw $this->createAccessDeniedException();
@@ -125,7 +125,7 @@ class UploadController extends Controller
             // @todo should be modved out to another class, this is not the
             //    controller responsability to do this.
             if ($filesize && !empty($options['maxSize']) && $options['maxSize'] < $filesize) {
-                return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => round($options['maxSize'] / 1024 / 1024, 1)]);
+                return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => \round($options['maxSize'] / 1024 / 1024, 1)]);
             }
         }
 
@@ -144,15 +144,17 @@ class UploadController extends Controller
 //                     return new JsonResponse(['message' => $this->translate("Allowed mime types are @mimes", ['@mimes' => implode(', ', $allowed)])], 403);
 //                 }
 //             }
+
+        return null;
     }
 
     /**
      * Upload endpoint.
      */
-    public function uploadAction(Request $request)
+    public function uploadAction(Request $request): Response
     {
         /** @var \MakinaCorpus\FilechunkBundle\FileSessionHandler $sessionHandler */
-        $sessionHandler = $this->get('filechunk.session_handler');
+        $sessionHandler = $this->get(FileSessionHandler::class);
 
         // Already checked by router, still better be safe than sorry
         if (!$request->isMethod('POST')) {
@@ -165,13 +167,13 @@ class UploadController extends Controller
             throw $this->createAccessDeniedException();
         }
         // File name might be encoded in base64 to avoid encoding errors
-        if ('==' === substr($filename, -2) || (false === strpos($filename, '.') && preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))) {
-            $filename = base64_decode($filename);
+        if ('==' === \substr($filename, -2) || (false === \strpos($filename, '.') && \preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))) {
+            $filename = \base64_decode($filename);
         }
         // JavaScript widget will use encodeURIComponent() in which space char is
         // encoded using %20 and not +, so we are safe to use rawurldecode() and not
         // urldecode() here.
-        $filename = rawurldecode($filename);
+        $filename = \rawurldecode($filename);
 
         // Parse content size, range, and other details
         $rawRange = $request->headers->get('Content-Range');
@@ -193,7 +195,7 @@ class UploadController extends Controller
 
         $file = null; $builder = null; $isComplete = false;
         try {
-            $input = fopen("php://input", "rb");
+            $input = \fopen("php://input", "rb");
             if (!$input) {
                 throw new \RuntimeException("Could not open HTTP POST input stream");
             }
@@ -204,23 +206,26 @@ class UploadController extends Controller
             $isComplete = $builder->isComplete();
         } finally {
             if ($input) {
-                @fclose($input);
+                @\fclose($input);
             }
         }
 
         return $this->json([
-            'finished'  => $isComplete,
-            'offset'    => $builder->getOffset(),
-            'preview'   => $file->getFilename(),
-            'fid'       => $file->getFilename(),
-            'writen'    => $written,
-            'hash'      => $isComplete ? md5_file($builder->getAbsolutePath()) : null,
-            'mimetype'  => $file->getMimeType(),
-            'filename'  => $file->getFilename(),
+            'finished' => $isComplete,
+            'offset' => $builder->getOffset(),
+            'preview' => $file->getFilename(),
+            'fid' => $file->getFilename(),
+            'writen' => $written,
+            'hash' => $isComplete ? md5_file($builder->getAbsolutePath()) : null,
+            'mimetype' => $file->getMimeType(),
+            'filename' => $file->getFilename(),
         ]);
     }
 
-    public function deleteAction(Request $request)
+    /**
+     * Delete endpoing
+     */
+    public function deleteAction(Request $request): Response
     {
         throw new \Exception("Not implemented yet");
     }

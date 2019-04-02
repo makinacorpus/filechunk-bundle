@@ -1,27 +1,32 @@
-# Javascript file upload widget and form type for Symfony
+# File upload widget and file management for Symfony
 
-**This is a very early release**, this package is far from being complete
-and provide minimal functionnalities as of today.
+This bundle provides various helpers for managing files in Symfony:
 
-This package provides a form widget that upload large files as chunks using
-JavaScript client side code using the JavaScript window.FileReader API.
+ - a chunked file upload endpoint, that is tailored to be used with the
+   https://github.com/makinacorpus/filechunk-front widget, but that may
+   be used by any other component,
 
-Features:
+ - a file manager that allows you to register logical schemes (such as
+   `upload://`, `temporary://`, ... and convert back and forth absolute
+   path names and scheme-based URIs, allowing you to store protocol
+   relative URIs in database avoiding absolute path handling nightmare.
 
-*   Allows very large file uploads;
-*   Allows resuming broken uploads;
-*   Should be security-wise quite efficient;
-*   Form type uses as input and output Symfony ``File`` instances;
-*   Allows to bypass most HTTP restrictions on file uploads (size, timeouts);
-*   Do not use the PHP file upload mecanisms.
+The chunked file upload endpoint allows:
 
-Known browsers to work:
+ - very large file uploads,
+ - resuming broken uploads,
+ - bypassing most HTTP restrictions on file uploads (size, timeouts);
+ - avoiding the PHP file upload mecanisms,
+ - provides a form type uses as input and output Symfony ``File`` instances,
+ - should be security-wise quite efficient.
 
-*   Chrome <= 49
-*   Edge <= 13
-*   IE <= 11
-*   Firefox <= 33
-*   And probably others, since it only uses a very small subset of the FileReader API.
+Known browsers to work with the external JavaScript widget:
+
+ - Chrome <= 49
+ - Edge <= 13
+ - IE <= 11
+ - Firefox <= 33
+ - And probably others, since it only uses a very small subset of the FileReader API.
 
 # Installation
 
@@ -45,6 +50,7 @@ filechunk:
 ```
 
 And the associated form theme in your ``app/config.yml`` file:
+
 ```yaml
 twig:
     debug:            "%kernel.debug%"
@@ -144,15 +150,15 @@ in the whole validator chain, this way:
 
 # Important notes
 
-*   if you provide default values via the form data, and remove it via the UI
-    on the HTML page, you have no way of fetching the removed file list, you
-    must take care of this manually: this will be one of the first feature to
-    be implemented in the future;
+ - if you provide default values via the form data, and remove it via the UI
+   on the HTML page, you have no way of fetching the removed file list, you
+   must take care of this manually: this will be one of the first feature to
+   be implemented in the future;
 
-*   uploaded files are NOT PHP uploaded files, but regular files in your
-    temporary folder, you need to move them manually (you cannot use the
-    ``move_uploaded_file()`` PHP function;
+ - uploaded files are NOT PHP uploaded files, but regular files in your
+   temporary folder, you need to move them manually (you cannot use the
+   ``move_uploaded_file()`` PHP function;
 
-*   You need recent browsers.
+ - You need recent browsers.
 
 That's pretty much it, have fun!
