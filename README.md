@@ -9,7 +9,13 @@ This bundle provides various helpers for managing files in Symfony:
  - a file manager that allows you to register logical schemes (such as
    `upload://`, `temporary://`, ... and convert back and forth absolute
    path names and scheme-based URIs, allowing you to store protocol
-   relative URIs in database avoiding absolute path handling nightmare.
+   relative URIs in database avoiding absolute path handling nightmare,
+
+ - provides a PHP StreamWrapper implementation for transparent usage of
+   custom URI schemes, please not it will only work when stream points
+   to a directory within the local file system, and it must be
+   explicitely enabled due to potential side effects (for now, this
+   wasn't implemented).
 
 The chunked file upload endpoint allows:
 
@@ -41,7 +47,7 @@ Optionnally, if you are working in a Drupal 7 context, you may just install the 
 module: [https://github.com/makinacorpus/drupal-filechunk](https://github.com/makinacorpus/drupal-filechunk)
 instead of manually registering the JavaScript widget.
 
-Register the routing.yml file in your ``app/routing.yml`` file:
+Register the routing.yml file in your ``config/routes.yaml`` file:
 
 ```yaml
 filechunk:
@@ -49,7 +55,7 @@ filechunk:
     prefix: /
 ```
 
-And the associated form theme in your ``app/config.yml`` file:
+And the associated form theme in your ``config/packages/twig.yaml`` file:
 
 ```yaml
 twig:
@@ -64,7 +70,13 @@ And it should probably work.
 
 # Usage
 
-## Basic usage
+## File manager API
+
+Documentation will come soon.
+
+## File widget
+
+### Basic usage
 
 Just use the ``MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType`` form type
 in your own form builders.
@@ -72,7 +84,7 @@ in your own form builders.
 Default values **MUST** be ``Symfony\Component\HttpFoundation\File\File``
 instances, values returned will also be.
 
-## Validation
+### Validation
 
 You may happily use the ``Symfony\Component\Validator\Constraints\File`` file
 constraint to validate you file:
@@ -91,7 +103,7 @@ constraint to validate you file:
         ])
 ```
 
-## Caveat with multiple values
+### Caveat with multiple values
 
 When using the ``multiple`` property set to true, you cannot just apply the
 ``Assert\File`` validator, if you do, since the widget will return an array
@@ -119,7 +131,7 @@ working example on how to tranform the previous example:
 
 You may find a better explaination of this there [http://blog.arithm.com/2014/11/24/validating-multiple-files-in-symfony-2-5/](http://blog.arithm.com/2014/11/24/validating-multiple-files-in-symfony-2-5/)
 
-## Using validation group when working with multiple values
+### Using validation group when working with multiple values
 
 Same as upper, but you have validation groups too, you need to cascade the groups
 in the whole validator chain, this way:
@@ -148,7 +160,7 @@ in the whole validator chain, this way:
        ])
 ```
 
-# Important notes
+### Important notes
 
  - if you provide default values via the form data, and remove it via the UI
    on the HTML page, you have no way of fetching the removed file list, you
@@ -162,3 +174,12 @@ in the whole validator chain, this way:
  - You need recent browsers.
 
 That's pretty much it, have fun!
+
+# Credits
+
+This code includes sligthly modified code from Drupal 8.x https://www.drupal.org
+project, located in the `./StreamWrapper` directory, all credits to their
+original authors (right now, code still isn't there, sorry).
+
+All remaining code is an original creation of Makina Corpus
+https://www.makina-corpus.com
