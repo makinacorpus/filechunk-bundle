@@ -30,6 +30,13 @@ final class FileManagerTest extends TestCase
         $this->assertSame('/some/private', $manager->getWorkingDirectory(FileManager::SCHEME_PRIVATE));
     }
 
+    public function testGetAbsolutePathWithSchemeOnly()
+    {
+        $manager = $this->createFileManager();
+
+        $this->assertSame('/some/private', $manager->getAbsolutePath('private://'));
+    }
+
     public function testGetWorkingDirectoryFailsWithUnknownScheme()
     {
         $this->expectException(\InvalidArgumentException::class);

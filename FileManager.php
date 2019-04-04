@@ -4,15 +4,59 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\File\File;
+use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
 
 final class FileManager
 {
+    const MODE_DIR = 0777;
+    const MODE_FILE = 0666;
     const SCHEME_LOCAL = 'file';
     const SCHEME_PRIVATE = 'private';
     const SCHEME_PUBLIC = 'public';
     const SCHEME_TEMPORARY = 'temporary';
     const SCHEME_UPLOAD = 'upload';
+
+    /**
+     * On name conflict when moving a file, raise an exception, this is the
+     * default behaviour when no flags are given.
+     */
+    const MOVE_CONFLICT_ERROR = 8;
+
+    /**
+     * On name conflict when moving a file, overwrite the existing one.
+     */
+    const MOVE_CONFLICT_OVERWRITE = 4;
+
+    /**
+     * On name conflict when moving a file, rename the current file
+     * using one of the strategy patterns exposed below.
+     */
+    const MOVE_CONFLICT_RENAME = 2;
+
+    /**
+     * Renaming strategy: increment a counter at the end of file name, this
+     * is the default behaviour when no flags are given.
+     */
+    const STRATEGY_RENAME_INC = 16;
+
+    /**
+     * No strategy, just put the file in the destination folder, this is the
+     * default behaviour.
+     */
+    const STRATEGY_DIRNAME_NONE = null;
+
+    /**
+     * Put file in a sub-directory in the form /YYYY/MM/DD/FILE.
+     */
+    const STRATEGY_DIRNAME_DATE = 'date';
+
+    /**
+     * Put file in a sub-directory in the form /YYYY/MM/DD/HH/II/FILE.
+     */
+    const STRATEGY_DIRNAME_DATETIME = 'datetime';
 
     /**
      * @var array
@@ -45,6 +89,9 @@ final class FileManager
         });
     }
 
+    /**
+     * Fail if scheme is unknown
+     */
     private static function unknownScheme(string $scheme): string
     {
         throw new \InvalidArgumentException(\sprintf("Scheme '%s' is unknown", $scheme));
@@ -130,7 +177,7 @@ final class FileManager
     /**
      * Implementation of identify() working with an already normalized URI.
      */
-    private function identifyNormalized(string $uri): ?SchemeURI
+    private function unsafeIdentify(string $uri): ?SchemeURI
     {
         $scheme = $this->getScheme($uri);
 
@@ -189,7 +236,15 @@ final class FileManager
      */
     public function identify(string $uri): ?SchemeURI
     {
-        return $this->identifyNormalized(self::normalizePath($uri));
+        return $this->unsafeIdentify(self::normalizePath($uri));
+    }
+
+    /**
+     * Internal implementation of isPathWithin().
+     */
+    private function unsafeIsPathWithin(string $filename, string $directory): bool
+    {
+        return 0 === \strpos($filename, $directory);
     }
 
     /**
@@ -197,7 +252,267 @@ final class FileManager
      */
     public function isPathWithin(string $uri, string $directory): bool
     {
-        return 0 === \strpos($this->getAbsolutePath($uri), $this->getAbsolutePath($directory));
+        return $this->unsafeIsPathWithin(
+            $this->getAbsolutePath($uri),
+            $this->getAbsolutePath($directory)
+        );
+    }
+
+    /**
+     * Internal implementation of isDuplicateOf().
+     *
+     * In theory, it should be almost impossible (at the very least
+     * it's very improbable) to have false positives.
+     *
+     * The only way to be conservative would to check bit per bit if files
+     * are identical, maybe we'll switch to that one day.
+     */
+    private static function unsafeIsDuplicateOf(string $filename, string $otherFilename): bool
+    {
+        // First check size
+        if (\filesize($filename) !== \filesize($otherFilename)) {
+            return false;
+        }
+
+        try {
+            $guesser = MimeTypeGuesser::getInstance();
+            if ($guesser->guess($filename) !== $guesser->guess($otherFilename)) {
+                return false;
+            }
+        } catch (\Throwable $e) {
+            // Symfony might fail on mime type guesser initialization, let's
+            // just be careful and return false in case.
+            return false;
+        }
+
+        // And the worst part, sha1sum of the files.
+        return \sha1_file($filename) === \sha1_file($otherFilename);
+    }
+
+    /**
+     * Tell if the given files are a duplicate of each other
+     */
+    public function isDuplicateOf(string $someUri, string $otherUri): bool
+    {
+        return self::unsafeIsDuplicateOf(
+            $this->getAbsolutePath($someUri),
+            $this->getAbsolutePath($otherUri),
+        );
+    }
+
+    /**
+     * Internal implementation of deduplicate().
+     */
+    private function unsafeDeduplicate(string $filename): string
+    {
+        $ext = null;
+        $basename = \basename($filename);
+        $dirname = \dirname($filename);
+
+        if ($pos = \strrpos($basename, '.')) {
+            $ext = \substr($basename, $pos + 1);
+            $basename = \substr($basename, 0, $pos);
+        }
+
+        $counter = 0;
+        do {
+            $counter++; // Starts at 1. It's fine.
+            if ($ext) {
+                $candidate = \sprintf("%s/%s_%d.%s", $dirname, $basename, $counter, $ext);
+            } else {
+                $candidate = \sprintf("%s/%s_%d", $dirname, $basename, $counter);
+            }
+        } while (\file_exists($candidate));
+
+        return $candidate;
+    }
+
+    /**
+     * Deduplicate file name in its folder.
+     */
+    public function deduplicate(string $uri): string
+    {
+        return $this->getURI($this->unsafeDeduplicate($this->getAbsolutePath($uri)));
+    }
+
+    /**
+     * Internal implementation for both rename() and renameIfNotWithin().
+     */
+    private function unsafeRename(string $filename, string $directory,
+        ?int $flags = null, ?string $strategy = null, ?int $mode = null): string
+    {
+        if (!\file_exists($filename)) {
+            throw new IOException(\sprintf("File '%s' does not exist", $filename));
+        }
+
+        if ($strategy) {
+            switch ($strategy) {
+
+                case self::STRATEGY_DIRNAME_DATE:
+                    $date = new \DateTimeImmutable();
+                    $destination = \sprintf(
+                        "%s/%s/%s/%s",
+                        $directory,
+                        $date->format('Y'), $date->format('m'), $date->format('d')
+                    );
+                    break;
+
+                case self::STRATEGY_DIRNAME_DATETIME:
+                    $date = new \DateTimeImmutable();
+                    $destination = \sprintf(
+                        "%s/%s/%s/%s/%s/%s",
+                        $directory,
+                        $date->format('Y'), $date->format('m'), $date->format('d'),
+                        $date->format('h'), $date->format('i')
+                    );
+                    break;
+
+                default:
+                    throw new \InvalidArgumentException(\sprintf("Unknown directory strategy: '%s'", $strategy));
+            }
+        } else {
+            $destination = $directory;
+        }
+
+        $filesystem = new Filesystem();
+        $filesystem->mkdir($destination);
+
+        if (!$flags) {
+            $flags = 0;
+        }
+
+        $destFilename = \sprintf("%s/%s", $destination, \basename($filename));
+
+        if (\file_exists($destFilename)) {
+
+            // Attempt a sha1 over both the file content, and do not fail
+            // or proceed if files have the same type and sha1 sum.
+            // @todo this should not be a default behaviour, a user might
+            //   want to let same files to be uploaded.
+            if (self::unsafeIsDuplicateOf($filename, $destFilename)) {
+                return $destFilename;
+            }
+
+            if ($flags & self::MOVE_CONFLICT_OVERWRITE) {
+                // Do nothing, we will overwrite the file
+            } else if ($flags & self::MOVE_CONFLICT_RENAME) {
+                $destFilename = $this->unsafeDeduplicate($destFilename);
+            } else {
+                throw new IOException(\sprintf("Cannot move '%s' to '%s': file exists", $filename, $destFilename));
+            }
+        }
+
+        $filesystem->rename($filename, $destFilename, true);
+
+        return $destFilename;
+    }
+
+    /**
+     * Move a file to another folder.
+     *
+     * @param string $source
+     *   Source file URI or absolute path
+     * @param string $destination
+     *   Destination folder, if file with the same name already exists
+     * @param int $options
+     *   Bitflags (constants of this class) that will alter this function
+     *   behavior.
+     *
+     * @return string
+     *   The new file URI (and not absolute path) even if file was not moved.     */
+    public function rename(string $source, string $destination,
+        int $flags = 0, ?string $strategy = null, ?int $mode = null): string
+    {
+        return $this->getURI(
+            $this->unsafeRename(
+                $this->getAbsolutePath($source),
+                $this->getAbsolutePath($destination),
+                $flags, $strategy
+            )
+        );
+    }
+
+    /**
+     * Move a file to another folder, do nothing if file is already within
+     * the given destination directory.
+     *
+     * @param string $sourceUri
+     *   Source file URI or absolute path
+     * @param string $destination
+     *   Destination folder, if file with the same name already exists
+     * @param int $options
+     *   Bitflags (constants of this class) that will alter this function
+     *   behavior.
+     *
+     * @return string
+     *   The new file URI (and not absolute path) even if file was not moved.
+     */
+    public function renameIfNotWithin(string $source, string $destination,
+        int $flags = 0, ?string $strategy = null): string
+    {
+        $sourcePath = $this->getAbsolutePath($source);
+        $destinationPath = $this->getAbsolutePath($destination);
+
+        if ($this->unsafeIsPathWithin($sourcePath, $destinationPath)) {
+            return $this->getURI($sourcePath);
+        }
+
+        return $this->getURI(
+            $this->unsafeRename($sourcePath, $destinationPath, $flags, $strategy)
+        );
+    }
+
+    /**
+     * Get default chmod for directories
+     */
+    public function getDefaultModeForDir(): int
+    {
+        // @todo make this configurable at runtime, or at least
+        //   make it honor the current umask env setting
+        return self::MODE_DIR;
+    }
+
+    /**
+     * Internal implementation of mkdir().
+     */
+    private function unsafeMkdir(string $directory, ?int $mode = null): void
+    {
+        (new Filesystem())->mkdir($directory, $mode ?? $this->getDefaultModeForDir());
+    }
+
+    /**
+     * Create directory
+     */
+    public function mkdir(string $directory, ?int $mode = null): void
+    {
+        $this->unsafeMkdir(
+            $this->getAbsolutePath($directory),
+            $mode
+        );
+    }
+
+    /**
+     * Internal implementation of copy().
+     */
+    private function unsafeCopy(string $source, string $destination): void
+    {
+        // @todo Symfony implementation never uses copy() which makes it
+        //   inneficient when dealing with local filesystem, we should
+        //   bypass it when files are local.
+        (new Filesystem())->copy($source, $destination);
+    }
+
+    /**
+     * Copy file to destination, it will always overwrite files according to
+     * \Symfony\Component\Filesystem\Filesystem::copy() own overwrite strategy
+     * which may vary depending upon if the file is local or distant.
+     */
+    public function copy(string $source, string $destination): void
+    {
+        $this->unsafeCopy(
+            $this->getAbsolutePath($source),
+            $this->getAbsolutePath($destination)
+        );
     }
 
     /**
@@ -225,9 +540,15 @@ final class FileManager
      */
     public function getAbsolutePath(string $uri): string
     {
+        if ('://' === \substr($uri, -3)) {
+            if (($scheme = \substr($uri, 0, -3)) && isset($this->knownSchemes[$scheme])) {
+                return $this->getWorkingDirectory($scheme);
+            }
+        }
+
         $uri = self::normalizePath($uri);
 
-        if ($identity = $this->identifyNormalized($uri)) {
+        if ($identity = $this->unsafeIdentify($uri)) {
             return $identity->getAbsolutePath();
         }
 
@@ -245,7 +566,7 @@ final class FileManager
     {
         $filename = self::normalizePath($filename);
 
-        if ($identity = $this->identifyNormalized($filename)) {
+        if ($identity = $this->unsafeIdentify($filename)) {
             return (string)$identity;
         }
 
