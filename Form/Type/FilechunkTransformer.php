@@ -2,6 +2,7 @@
 
 namespace MakinaCorpus\FilechunkBundle\Form\Type;
 
+use MakinaCorpus\FilechunkBundle\FileManager;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\HttpFoundation\File\File;
@@ -9,6 +10,7 @@ use Symfony\Component\HttpFoundation\File\File;
 class FilechunkTransformer implements DataTransformerInterface
 {
     private $directory;
+    private $fileManager;
     private $isMultiple = false;
 
     /**
@@ -20,13 +22,11 @@ class FilechunkTransformer implements DataTransformerInterface
 
     /**
      * Default constructor
-     *
-     * @param string $directory
-     * @param string $isMultiple
      */
-    public function __construct($directory, $isMultiple = false)
+    public function __construct(FileManager $fileManager, string $directory, bool $isMultiple = false)
     {
         $this->directory = $directory;
+        $this->fileManager = $fileManager;
         $this->isMultiple = $isMultiple;
     }
 
@@ -35,21 +35,31 @@ class FilechunkTransformer implements DataTransformerInterface
      */
     public function transform($value)
     {
+        // Deal with empty values
         if ($value === null || empty($value)) {
             return ['fid' => null, 'files' => []];
         }
-        if (!is_array($value)) {
+
+        // Normalize to array, internally we always work with multiple files
+        if (!\is_array($value)) {
             $value = [$value];
         }
 
-        $files = [];
-        $hashes = [];
+        $files = $hashes = [];
         foreach ($value as $key => $file) {
+            // Allow input to be absolute path or file URI.
+            if (\is_string($file)) {
+                $file = new File($this->fileManager->getAbsolutePath($file));
+            } 
             if (!$file instanceof File) {
-                throw new TransformationFailedException(sprintf("'%s' value is not a file", $key));
+                throw new TransformationFailedException(\sprintf(
+                    "'%s' value is not a %s instanceof nor a valid URI",
+                    $key, File::class
+                ));
             }
+
             $files[$file->getFilename()] = $file;
-            $hashes[$file->getFilename()] = md5_file($file->getRealPath());
+            $hashes[$file->getFilename()] = \md5_file($file->getRealPath());
         }
 
         $this->originalValues = $files;
@@ -59,7 +69,7 @@ class FilechunkTransformer implements DataTransformerInterface
         // be) which means we don't have any good reason to check for
         // multipleness here.
         // We keep the 'files' data for themeing (see twig template).
-        return ['fid' => json_encode($hashes), 'files' => $files];
+        return ['fid' => \json_encode($hashes), 'files' => $files];
     }
 
     /**
@@ -73,10 +83,10 @@ class FilechunkTransformer implements DataTransformerInterface
         // it in his face in certain cases, so we are just going to remove the
         // wrong files from the widget.
         if (!empty($submitted['fid'])) {
-            $filenames = json_decode($submitted['fid'], JSON_OBJECT_AS_ARRAY);
+            $filenames = \json_decode($submitted['fid'], JSON_OBJECT_AS_ARRAY);
 
             foreach ($filenames as $data) {
-                if (!is_array($data) || !isset($data['filename'])) {
+                if (!\is_array($data) || !isset($data['filename'])) {
                     continue;
                 }
 
@@ -94,10 +104,10 @@ class FilechunkTransformer implements DataTransformerInterface
                     // Normal operation is to check for upload files to be there
                     // and ready to work on.
                     $target = $this->directory.'/'.$name;
-                    if (!file_exists($target)) {
+                    if (!\file_exists($target)) {
                         continue;
                     }
-                    if (md5_file($target) !== $hash) {
+                    if (\md5_file($target) !== $hash) {
                         continue;
                     }
                 }
@@ -110,12 +120,12 @@ class FilechunkTransformer implements DataTransformerInterface
             // Do not attempt the count on an empty array, else the reset()
             // function will return false and validation component will break,
             // especially when it's awaiting for a an array of File instances,
-            // the All() validator cannot deal with 'false' values
+            // the All() validator cannot deal with 'false' values.
             if ($ret) {
-                if (1 < count($ret)) {
+                if (1 < \count($ret)) {
                     $ret = []; // Error case.
                 } else {
-                    $ret = reset($ret);
+                    $ret = \reset($ret);
                 }
             } else {
                 $ret = null;
