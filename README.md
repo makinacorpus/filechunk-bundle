@@ -34,7 +34,9 @@ Known browsers to work with the external JavaScript widget:
  - Firefox <= 33
  - And probably others, since it only uses a very small subset of the FileReader API.
 
-# Installation
+# Setup
+
+## Installation
 
 ```sh
 composer require makinacorpus/filechunk-bundle
@@ -46,6 +48,37 @@ it from: [https://github.com/makinacorpus/filechunk-front](https://github.com/ma
 Optionnally, if you are working in a Drupal 7 context, you may just install the following
 module: [https://github.com/makinacorpus/drupal-filechunk](https://github.com/makinacorpus/drupal-filechunk)
 instead of manually registering the JavaScript widget.
+
+## Basic configuration
+
+Everything should be auto-configured if you follow the rest of this section.
+
+## Custom schemes configuration
+
+Each custom scheme is tied to a custom folder, allowing you to store protocol
+relative URI in your database instead of absolute path, making the application
+portable and migrable easily.
+
+Per default, the bundle offers three schemes:
+
+ - `private://` for files that should not be accessible via the HTTPd
+   which will default to `%kernel.project_dir/var/private/%`,
+ - `public://` for files that will be freely visible via the HTTPd, which
+   will default to `%kernel.project_dir/public/files/`,
+ - `temporary://` for temporary files, which will default to PHP configured
+   temporary folder,
+ - `upload://` for chunked file upload, which defaults to `temporary://filechunk/`
+
+Only the temporary one cannot be configured, all others can be set via
+the following `.env` file variables:
+
+```
+FILE_PRIVATE_DIR="%kernel.project_dir%/var/private"
+FILE_PUBLIC_DIR="%kernel.project_dir%/public/files"
+FILE_UPLOAD_DIR="%kernel.project_dir%/var/tmp/upload"
+```
+
+## Chunked file upload widget configuration
 
 Register the routing.yml file in your ``config/routes.yaml`` file:
 

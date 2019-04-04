@@ -1,7 +1,4 @@
 parameters:
-    # Warning, the default system temporary folder could differ between
-    # CLI and HTTP execution contextes, case in which this will not work,
-    # in most projects, you need to set this explicitely.
     filechunk.upload_directory: "%env(resolve:FILE_UPLOAD_DIR)%"
     filechunk.public_directory: "%env(resolve:FILE_PUBLIC_DIR)%"
     filechunk.private_directory: "%env(resolve:FILE_PRIVATE_DIR)%"
@@ -19,7 +16,7 @@ services:
     filechunk_chunked_file_form_type:
         public: false
         class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
-        arguments: ["@filechunk.session_handler", "@router"]
+        arguments: ["@filechunk.file_manager", "@filechunk.session_handler", "@router"]
         tags: [{name: form.type}]
 
     filechunk.session_handler:
