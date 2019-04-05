@@ -296,7 +296,7 @@ final class FileManager
     {
         return self::unsafeIsDuplicateOf(
             $this->getAbsolutePath($someUri),
-            $this->getAbsolutePath($otherUri),
+            $this->getAbsolutePath($otherUri)
         );
     }
 
