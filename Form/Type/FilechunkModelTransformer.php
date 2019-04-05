@@ -25,6 +25,7 @@ class FilechunkModelTransformer implements DataTransformerInterface
      */
     public function __construct(FileManager $fileManager, bool $isMultiple = false, bool $asFiles = true)
     {
+        $this->asFiles = $asFiles;
         $this->fileManager = $fileManager;
         $this->isMultiple = $isMultiple;
     }
