@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
+use MakinaCorpus\FilechunkBundle\StreamWrapper\LocalStreamWrapper;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\File\File;
@@ -59,6 +60,11 @@ final class FileManager
     const STRATEGY_DIRNAME_DATETIME = 'datetime';
 
     /**
+     * We need this for stream wrappers.
+     */
+    private static $instance;
+
+    /**
      * @var array
      *   Keys are schemes (such as "file" or "public") values are the working
      *   directory. Directory could itself be using a scheme (such as "sftp://")
@@ -87,6 +93,32 @@ final class FileManager
         \uasort($this->knownSchemes, function ($a, $b) {
             return \strlen($b) - \strlen($a);
         });
+
+        self::initializeEnvironment($this);
+    }
+
+    /**
+     * I am so sorry, but working with stream wrappers forces us to taint
+     * the global scope.
+     */
+    private static function initializeEnvironment(self $instance)
+    {
+        self::$instance = $instance;
+
+        foreach ($instance->getKnownSchemes() as $scheme => $workingDirectory) {
+            \stream_wrapper_register($scheme, LocalStreamWrapper::class,  0);
+        }
+    }
+
+    /**
+     * Get instance
+     */
+    public static function getInstance(): self
+    {
+        if (!self::$instance) {
+            throw new \LogicException(\sprintf("'%s' instance must be programtically instanciated before using the static singleton", __CLASS__));
+        }
+        return self::$instance;
     }
 
     /**

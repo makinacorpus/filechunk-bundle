@@ -12,10 +12,7 @@ This bundle provides various helpers for managing files in Symfony:
    relative URIs in database avoiding absolute path handling nightmare,
 
  - provides a PHP StreamWrapper implementation for transparent usage of
-   custom URI schemes, please not it will only work when stream points
-   to a directory within the local file system, and it must be
-   explicitely enabled due to potential side effects (for now, this
-   wasn't implemented).
+   custom URI schemes.
 
 The chunked file upload endpoint allows:
 
@@ -23,8 +20,8 @@ The chunked file upload endpoint allows:
  - resuming broken uploads,
  - bypassing most HTTP restrictions on file uploads (size, timeouts);
  - avoiding the PHP file upload mecanisms,
- - provides a form type uses as input and output Symfony ``File`` instances,
- - should be security-wise quite efficient.
+ - easy to use with a custom form type that can input and output either ``File``
+   instances or string URIs.
 
 Known browsers to work with the external JavaScript widget:
 
@@ -212,7 +209,7 @@ That's pretty much it, have fun!
 
 This code includes sligthly modified code from Drupal 8.x https://www.drupal.org
 project, located in the `./StreamWrapper` directory, all credits to their
-original authors (right now, code still isn't there, sorry).
+original authors.
 
 All remaining code is an original creation of Makina Corpus
 https://www.makina-corpus.com
