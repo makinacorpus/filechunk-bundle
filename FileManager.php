@@ -360,6 +360,14 @@ final class FileManager
     }
 
     /**
+     * Does file or directory exists.
+     */
+    public function exists(string $uri): bool
+    {
+        return (new Filesystem())->exists($this->getAbsolutePath($uri));
+    }
+
+    /**
      * Deduplicate file name in its folder.
      */
     public function deduplicate(string $uri): string
