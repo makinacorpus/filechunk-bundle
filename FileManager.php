@@ -105,7 +105,11 @@ final class FileManager
     {
         self::$instance = $instance;
 
+        $registered = stream_get_wrappers();
         foreach ($instance->getKnownSchemes() as $scheme => $workingDirectory) {
+            if (\in_array($scheme, $registered)) {
+                \stream_wrapper_unregister($scheme);
+            }
             \stream_wrapper_register($scheme, LocalStreamWrapper::class,  0);
         }
     }
