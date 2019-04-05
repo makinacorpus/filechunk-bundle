@@ -216,7 +216,7 @@ final class UploadController extends Controller
             'preview' => $file->getFilename(),
             'fid' => $file->getFilename(),
             'writen' => $written,
-            'hash' => $isComplete ? md5_file($builder->getAbsolutePath()) : null,
+            'hash' => $isComplete ? \sha1_file($builder->getAbsolutePath()) : null,
             'mimetype' => $file->getMimeType(),
             'filename' => $file->getFilename(),
         ]);

@@ -153,16 +153,6 @@ class FilechunkType extends AbstractType
         // upload request).
         list($maxSize, $mimeTypes, $maxCount) = $this->aggregatesContraints($options['constraints'], $attributes);
 
-        // This actually should not be out of this class, but for readability
-        // reasons, I'd prefer it to get out and make this class shorter.
-        // @todo implement both the model transforme and the data transformer
-        //   if possible both on this class.
-        $transformer = new FilechunkTransformer(
-            $this->fileManager,
-            $this->sessionHandler->getTemporaryFilePath($name),
-            $options['multiple']
-        );
-
         // Store at the very least the maxSize and mimeType constraints
         // in session to allow the upload to check those, allowing to warn
         // the user he's doing something forbidden before uploading the
@@ -182,7 +172,12 @@ class FilechunkType extends AbstractType
                 'attr' => ['rel' => 'fid'],
                 'required' => false,
             ])
-            ->addModelTransformer($transformer)
+            ->addModelTransformer(
+                new FilechunkModelTransformer($this->fileManager, $options['multiple'], $options['return_as_file'])
+            )
+            ->addViewTransformer(
+                new FilechunkViewTransformer($this->fileManager, $this->sessionHandler->getTemporaryFilePath($name))
+            )
         ;
 
         // @todo for pure symfony forms, remove htmlentities() because twig
@@ -195,40 +190,8 @@ class FilechunkType extends AbstractType
      */
     public function buildView(FormView $view, FormInterface $form, array $options)
     {
-        $value = &$view->vars['value'];
-
-        if (!empty($value['fid']) && empty($value['files'])) {
-            // We come from an invalidated form submission, and raw values are
-            // sent back to the widget, which it may not understand, sadly; and
-            // from this point, the data transformer is not being called back
-            // and the template cannot rebuild the file list.
-            // THIS IS A DIRTY HACK, but I'm afraid there is actually no proper
-            // way of working around this.
-            // @todo explore using a view transformer instead...
-            //   I think this would be the right way to do it. I guess at the
-            //   time I wasn't able to find the Symfony documentation about
-            //   view transformers against model transformer.
-            foreach ($form->getConfig()->getModelTransformers() as $transformer) {
-                if ($transformer instanceof FilechunkTransformer) {
-                    $value['files'] = $transformer->reverseTransform($value);
-                }
-            }
-        }
-
-        // And because we are using Twig with no autoescape, and that the
-        // Symfony form, let's ensure it has been escaped.
-        // $value['fid'] = rawurlencode($value['fid']);
-        // @todo FOUQUE I AM NOT HAPPY (which one of them are you then?)
-        // @todo explore why this is still here, it should not since we
-        //    drop drupal support as of 2.x version
         $view->vars['fid_id'] = \sprintf('%s_%s', $view->vars['id'], 'fid');
         $view->vars['fid_name'] = \sprintf('%s[%s]', $view->vars['full_name'], 'fid');
-
-        // If the widget is not multiple, the view is, and we need to convert
-        // a single file to an array containing this file for the template.
-        if (!empty($value['files']) && !\is_array($value['files'])) {
-            $value['files'] = [$value['files']];
-        }
     }
 
     /**
