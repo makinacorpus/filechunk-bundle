@@ -15,16 +15,14 @@ final class FilechunkExtension extends AbstractExtension
 
     private $fileManager;
     private $requestStack;
-    private $webroot;
 
     /**
      * Default constructor
      */
-    public function __construct(FileManager $fileManager, RequestStack $requestStack, string $webroot)
+    public function __construct(FileManager $fileManager, RequestStack $requestStack)
     {
         $this->fileManager = $fileManager;
         $this->requestStack = $requestStack;
-        $this->webroot = $webroot;
     }
 
     /**
@@ -62,7 +60,7 @@ final class FilechunkExtension extends AbstractExtension
      */
     public function getFileUrl(string $filenameOrUri, bool $absolute = false): string
     {
-        $relativePath = $this->fileManager->getRelativePathFrom($filenameOrUri, $this->webroot);
+        $relativePath = $this->fileManager->getFileUrl($filenameOrUri);
 
         if (!$relativePath) {
             return self::ERROR_PATH;

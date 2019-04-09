@@ -73,10 +73,12 @@ final class FileManager
      */
     private $knownSchemes = [];
 
+    private $webroot;
+
     /**
      * Default constructor
      */
-    public function __construct(array $knownSchemes = [])
+    public function __construct(array $knownSchemes = [], ?string $webroot = null)
     {
         foreach ($knownSchemes as $scheme => $workindDirectory) {
             if (!\preg_match('@^[a-z0-9]+$@i', $scheme)) {
@@ -93,6 +95,8 @@ final class FileManager
         \uasort($this->knownSchemes, function ($a, $b) {
             return \strlen($b) - \strlen($a);
         });
+
+        $this->webroot = $webroot;
 
         self::initializeEnvironment($this);
     }
@@ -573,6 +577,19 @@ final class FileManager
         }
 
         return \ltrim(\substr($uri, $length), '/');
+    }
+
+    /**
+     * From a filename or URI return the webroot relative URI
+     */
+    public function getFileUrl(string $filenameOrUri): ?string
+    {
+        if ( $this->webroot) {
+            return $this->getRelativePathFrom($filenameOrUri, $this->webroot);
+        }
+        else {
+            return null;
+        }
     }
 
     /**

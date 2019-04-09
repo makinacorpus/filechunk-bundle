@@ -40,6 +40,6 @@ final class FilechunkExtension extends Extension
         $knownSchemes[FileManager::SCHEME_UPLOAD] = $container->getParameter('filechunk.upload_directory');
 
         // @todo user driven schemes (should be from configuration)
-        $fileManagerDef->setArguments([$knownSchemes]);
+        $fileManagerDef->setArgument(0, $knownSchemes);
     }
 }

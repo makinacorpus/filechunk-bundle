@@ -36,7 +36,8 @@ services:
     filechunk.file_manager:
         public: false
         class: MakinaCorpus\FilechunkBundle\FileManager
-        arguments: []
+        arguments:
+            $webroot: "%kernel.project_dir%/public"
 
     MakinaCorpus\FilechunkBundle\FileManager:
         public: true
