@@ -37,7 +37,7 @@ class FilechunkModelTransformer implements DataTransformerInterface
      */
     private function modelToNorm($file): File
     {
-        return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file);
+        return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file, false);
     }
 
     /**
@@ -48,7 +48,7 @@ class FilechunkModelTransformer implements DataTransformerInterface
     private function normToModel($file)
     {
         if ($this->asFiles) {
-            return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file);
+            return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file, false);
         }
 
         return $this->fileManager->getURI(($file instanceof File) ? $file->getRealPath() : (string)$file);

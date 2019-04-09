@@ -82,10 +82,17 @@ class FilechunkViewTransformer implements DataTransformerInterface
         }
 
         $files = $defaults = [];
+
+        /** @var \Symfony\Component\HttpFoundation\File\File $file */
         foreach ($normalizedValues as $key => $file) {
             $this->failIfNotFileInstance($key, $file); // Well, that, should not happen.
-            $files[$file->getFilename()] = $file;
-            $defaults[$file->getFilename()] = \sha1_file($file->getRealPath());
+            if ($this->fileManager->exists($file->getPathname())) {
+                $files[$file->getFilename()] = $file;
+                $defaults[$file->getFilename()] = \sha1_file($file->getRealPath());
+            } else {
+                // File does not exist, we should probably warn the user about it, but
+                // we have no meaningful way of doing it. At least, it won't break.
+            }
         }
 
         $this->originalValues = $files;
