@@ -26,9 +26,8 @@ final class TwigExtensionTest extends TestCase
                 FileManager::SCHEME_PUBLIC => '/var/www/html/',
                 FileManager::SCHEME_UPLOAD => '/tmp/upload',
                 FileManager::SCHEME_TEMPORARY => '/tmp',
-            ]),
-            $requestStack,
-            '/var/www/'
+            ], '/var/www/'),
+            $requestStack
         );
     }
 

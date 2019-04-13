@@ -7,6 +7,9 @@ use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * Originally from Drupal 8.8.x, deeply modified.
+ *
+ * @codeCoverageIgnore
+ *   This should be tested. But how?
  */
 class LocalStreamWrapper
 {

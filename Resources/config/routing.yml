@@ -2,11 +2,17 @@
 filechunk_remove:
     path: /filechunk/remove
     defaults:
-        _controller: FilechunkBundle:Upload:remove
+        _controller: MakinaCorpus\FilechunkBundle\Controller\UploadController::remove
+    methods: [POST]
+
+filechunk_token:
+    path: /filechunk/token
+    defaults:
+        _controller: MakinaCorpus\FilechunkBundle\Controller\UploadController::token
     methods: [POST]
 
 filechunk_upload:
     path: /filechunk/upload
     defaults:
-        _controller: FilechunkBundle:Upload:upload
+        _controller: MakinaCorpus\FilechunkBundle\Controller\UploadController::upload
     methods: [POST]

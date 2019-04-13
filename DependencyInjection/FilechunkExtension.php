@@ -4,13 +4,17 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle\DependencyInjection;
 
+use MakinaCorpus\FilechunkBundle\FileManager;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Loader;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Twig\Environment;
-use MakinaCorpus\FilechunkBundle\FileManager;
 
+/**
+ * @codeCoverageIgnore
+ * @todo This should be tested.
+ */
 final class FilechunkExtension extends Extension
 {
     /**
@@ -28,6 +32,15 @@ final class FilechunkExtension extends Extension
             $loader->load('twig.yml');
         }
 
+        $this->configureFileManagerSchemes($config, $container);
+        $this->configureGlobalFields($config, $container);
+    }
+
+    /**
+     * Configure file manager schemes
+     */
+    private function configureFileManagerSchemes(array $config, ContainerBuilder $container): void
+    {
         $fileManagerDef = $container->getDefinition('filechunk.file_manager');
         $knownSchemes = [];
 
@@ -41,5 +54,18 @@ final class FilechunkExtension extends Extension
 
         // @todo user driven schemes (should be from configuration)
         $fileManagerDef->setArgument(0, $knownSchemes);
+    }
+
+    /**
+     * Configure global fields
+     */
+    private function configureGlobalFields(array $config, ContainerBuilder $container): void
+    {
+        if (isset($config['fields'])) {
+            $sessionHandlerDef = $container->getDefinition('filechunk.session_handler');
+            foreach ($config['fields'] as $name => $options) {
+                $sessionHandlerDef->addMethodCall('addGlobalFieldConfig', [$name, $options]);
+            }
+        }
     }
 }

@@ -2,6 +2,7 @@
 
 namespace MakinaCorpus\FilechunkBundle\Form\Type;
 
+use MakinaCorpus\FilechunkBundle\FieldConfig;
 use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use Symfony\Component\Form\AbstractType;
@@ -157,7 +158,9 @@ class FilechunkType extends AbstractType
         // in session to allow the upload to check those, allowing to warn
         // the user he's doing something forbidden before uploading the
         // whole file.
-        $this->sessionHandler->addFieldConfig($name, ['maxSize' => $maxSize, 'mimeType' => $mimeTypes, 'maxCount' => $maxCount]);
+        $this->sessionHandler->addFieldConfig(FieldConfig::fromArray(
+            $name, ['maxsize' => $maxSize, 'mimetype' => $mimeTypes, 'maxcount' => $maxCount]
+        ));
 
         $builder
             // This won't hold any values, it will only serve as a placeholder

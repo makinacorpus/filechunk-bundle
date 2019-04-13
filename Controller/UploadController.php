@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
+use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
@@ -79,7 +80,7 @@ final class UploadController extends Controller
     /**
      * File chunk remove
      */
-    public function removeAction(Request $request): Response
+    public function remove(Request $request): Response
     {
         if (!$request->isMethod('POST')) {
             throw $this->createAccessDeniedException();
@@ -124,8 +125,8 @@ final class UploadController extends Controller
 
             // @todo should be modved out to another class, this is not the
             //    controller responsability to do this.
-            if ($filesize && !empty($options['maxSize']) && $options['maxSize'] < $filesize) {
-                return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => \round($options['maxSize'] / 1024 / 1024, 1)]);
+            if ($filesize && ($maxSize = $options->getMaxSize()) && $maxSize < $filesize) {
+                return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => \round($maxSize / 1024 / 1024, 1)]);
             }
         }
 
@@ -149,14 +150,24 @@ final class UploadController extends Controller
     }
 
     /**
+     * Endpoint to generate a token, for front apps.
+     */
+    public function token(FileSessionHandler $sessionHandler, Request $request): Response
+    {
+        if (!$request->isMethod('POST')) {
+            throw $this->createAccessDeniedException();
+        }
+
+        return $this->json([
+            'token' => $sessionHandler->getCurrentToken(),
+        ]);
+    }
+
+    /**
      * Upload endpoint.
      */
-    public function uploadAction(Request $request): Response
+    public function upload(FileSessionHandler $sessionHandler, FileManager $fileManager, Request $request): Response
     {
-        /** @var \MakinaCorpus\FilechunkBundle\FileSessionHandler $sessionHandler */
-        $sessionHandler = $this->get(FileSessionHandler::class);
-
-        // Already checked by router, still better be safe than sorry
         if (!$request->isMethod('POST')) {
             throw $this->createAccessDeniedException();
         }
@@ -200,9 +211,9 @@ final class UploadController extends Controller
                 throw new \RuntimeException("Could not open HTTP POST input stream");
             }
             // @todo get user identifier if possible
-            $builder    = new FileBuilder($filesize, $filename, $sessionHandler->getTemporaryFilePath($fieldname));
-            $written    = $builder->write($input, $start, $length);
-            $file       = $builder->getFile();
+            $builder = new FileBuilder($filesize, $filename, $sessionHandler->getTemporaryFilePath($fieldname));
+            $written = $builder->write($input, $start, $length);
+            $file = $builder->getFile();
             $isComplete = $builder->isComplete();
         } finally {
             if ($input) {
@@ -210,15 +221,18 @@ final class UploadController extends Controller
             }
         }
 
+        $target = $builder->getAbsolutePath();
+
         return $this->json([
+            'fid' => $file->getFilename(),
+            'filename' => $file->getFilename(),
             'finished' => $isComplete,
+            'hash' => $isComplete ? \sha1_file($target) : null,
+            'mimetype' => $file->getMimeType(),
             'offset' => $builder->getOffset(),
             'preview' => $file->getFilename(),
-            'fid' => $file->getFilename(),
+            'url' => $isComplete ? $fileManager->getFileUrl($target) : null,
             'writen' => $written,
-            'hash' => $isComplete ? \sha1_file($builder->getAbsolutePath()) : null,
-            'mimetype' => $file->getMimeType(),
-            'filename' => $file->getFilename(),
         ]);
     }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 final class FileSessionHandler
 {
@@ -14,6 +14,7 @@ final class FileSessionHandler
 
     private $debug;
     private $fileManager;
+    private $globalFields = [];
     private $session;
     private $uploadDirectory;
 
@@ -37,6 +38,17 @@ final class FileSessionHandler
         }
 
         return $token;
+    }
+
+    /**
+     * @internal
+     *   For unit testing
+     */
+    public function regenerateToken() : string
+    {
+        $this->session->remove(self::SESSION_TOKEN);
+
+        return $this->getCurrentToken();
     }
 
     /**
@@ -99,18 +111,34 @@ final class FileSessionHandler
     }
 
     /**
+     * Add global field config
+     */
+    public function addGlobalFieldConfig(FieldConfig $config): void
+    {
+        $this->globalFields[$config->getName()] = $config;
+    }
+
+    /**
+     * Get global field config
+     */
+    public function getGlobalFieldConfig(string $name): ?FieldConfig
+    {
+        return $this->globalFields[$name] ?? null;
+    }
+
+    /**
      * Add a single field configuration
      */
-    public function addFieldConfig(string $name, array $config)
+    public function addFieldConfig(FieldConfig $config): void
     {
-        $this->session->set($this->getFieldSessionKey($name), $config);
+        $this->session->set($this->getFieldSessionKey($config->getName()), $config);
     }
 
     /**
      * Get a single field configuration
      */
-    public function getFieldConfig(string $name) : array
+    public function getFieldConfig(string $name) : ?FieldConfig
     {
-        return $this->session->get($this->getFieldSessionKey($name), []);
+        return $this->session->get($this->getFieldSessionKey($name)) ?? $this->getGlobalFieldConfig($name);
     }
 }

@@ -584,12 +584,10 @@ final class FileManager
      */
     public function getFileUrl(string $filenameOrUri): ?string
     {
-        if ( $this->webroot) {
+        if ($this->webroot) {
             return $this->getRelativePathFrom($filenameOrUri, $this->webroot);
         }
-        else {
-            return null;
-        }
+        return null;
     }
 
     /**

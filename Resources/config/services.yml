@@ -10,6 +10,10 @@ parameters:
 
 services:
 
+    MakinaCorpus\FilechunkBundle\Controller\UploadController:
+        public: false
+        tags: ["controller.service_arguments"]
+
     filechunk.command.cleanup_temporary_files:
         public: false
         class: MakinaCorpus\FilechunkBundle\Command\CleanupTemporaryFilesCommand
