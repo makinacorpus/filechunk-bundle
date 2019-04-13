@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
+use MakinaCorpus\FilechunkBundle\FieldConfig;
 use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
@@ -110,24 +111,16 @@ final class UploadController extends Controller
     /**
      * Validate uploaded file using session token.
      */
-    private function validateUploadedFile(FileSessionHandler $sessionHandler, Request $request, string $token, string $fieldname = '', int $filesize = 0): ?string
+    private function validateUploadedFile(FieldConfig $config,
+        string $filename, int $filesize): ?string
     {
-        if (!$sessionHandler->isTokenValid($token)) {
-            throw $this->createAccessDeniedException();
-        }
-
-        // X-File-Field was added recently, in order to avoid API breakage, it
-        // remains optional, older JS still have versions will have nasty bugs.
-        if ($fieldname) {
-            if (!$options = $sessionHandler->getFieldConfig($fieldname)) {
-                throw $this->createAccessDeniedException();
-            }
-
-            // @todo should be modved out to another class, this is not the
-            //    controller responsability to do this.
-            if ($filesize && ($maxSize = $options->getMaxSize()) && $maxSize < $filesize) {
-                return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => \round($maxSize / 1024 / 1024, 1)]);
-            }
+        // @todo should be modved out to another class, this is not the
+        //    controller responsability to do this.
+        if ($filesize && ($maxSize = $config->getMaxSize()) && $maxSize < $filesize) {
+            return $this->translate(
+                "Maximum file size allowed is @mega mo",
+                ['@mega' => \round($maxSize / 1024 / 1024, 1)]
+            );
         }
 
         // Validation basics
@@ -142,7 +135,10 @@ final class UploadController extends Controller
 //                 $guesser = MimeTypeGuesser::getInstance();
 //                 $mimeType = $guesser->guess($filename);
 //                 if (!in_array($mimeType, $allowed)) {
-//                     return new JsonResponse(['message' => $this->translate("Allowed mime types are @mimes", ['@mimes' => implode(', ', $allowed)])], 403);
+//                     return new JsonResponse(['message' => $this->translate(
+//                         "Allowed mime types are @mimes",
+//                         ['@mimes' => implode(', ', $allowed)]
+//                     )], 403);
 //                 }
 //             }
 
@@ -164,27 +160,64 @@ final class UploadController extends Controller
     }
 
     /**
+     * Cleanup incimming filename that might have been encoded
+     */
+    private function cleanupIncommingFilename(string $filename): string
+    {
+        // Filename is required
+        if (empty($filename)) {
+            throw $this->createAccessDeniedException();
+        }
+        // File name might be encoded in base64 to avoid encoding errors
+        if ('==' === \substr($filename, -2) || (false === \strpos($filename, '.') &&
+            \preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))
+        ) {
+            $filename = \base64_decode($filename);
+        }
+
+        // JavaScript widget will use encodeURIComponent() in which space char is
+        // encoded using %20 and not +, so we are safe to use rawurldecode() and not
+        // urldecode() here.
+        return \rawurldecode($filename);
+    }
+
+    /**
+     * Build file from incomming input
+     */
+    private function buildFile(string $directory, int $filesize,
+        string $filename, int $start, int $length): FileBuilder
+    {
+        try {
+            $input = \fopen("php://input", "rb");
+            if (!$input) {
+                throw new \RuntimeException("Could not open HTTP POST input stream");
+            }
+
+            // @todo get user identifier if possible
+            $builder = new FileBuilder($filesize, $filename, $directory);
+            $builder->write($input, $start, $length);
+
+            return $builder;
+
+        } finally {
+            if ($input) {
+                @\fclose($input);
+            }
+        }
+    }
+
+    /**
      * Upload endpoint.
      */
-    public function upload(FileSessionHandler $sessionHandler, FileManager $fileManager, Request $request): Response
+    public function upload(FileSessionHandler $sessionHandler,
+        FileManager $fileManager, Request $request): Response
     {
         if (!$request->isMethod('POST')) {
             throw $this->createAccessDeniedException();
         }
 
-        // Filename is required
-        $filename = $request->headers->get('X-File-Name');
-        if (empty($filename)) {
-            throw $this->createAccessDeniedException();
-        }
-        // File name might be encoded in base64 to avoid encoding errors
-        if ('==' === \substr($filename, -2) || (false === \strpos($filename, '.') && \preg_match('#^[a-zA-Z0-9\+/]+={0,2}$#ims', $filename))) {
-            $filename = \base64_decode($filename);
-        }
-        // JavaScript widget will use encodeURIComponent() in which space char is
-        // encoded using %20 and not +, so we are safe to use rawurldecode() and not
-        // urldecode() here.
-        $filename = \rawurldecode($filename);
+        $directory = $strategy = null;
+        $filename = $this->cleanupIncommingFilename($request->headers->get('X-File-Name'));
 
         // Parse content size, range, and other details
         $rawRange = $request->headers->get('Content-Range');
@@ -199,40 +232,60 @@ final class UploadController extends Controller
 
         // Proceed with incoming file validation
         $token = $request->headers->get('X-File-Token', '');
-        $fieldname = $request->headers->get('X-File-Field', '');
-        if ($message = $this->validateUploadedFile($sessionHandler, $request, $token, $fieldname, $filesize)) {
-            return $this->json(['message' => $message], 403);
+
+        // Token validation
+        if (!$sessionHandler->isTokenValid($token)) {
+            throw $this->createAccessDeniedException();
         }
 
-        $file = null; $builder = null; $isComplete = false;
-        try {
-            $input = \fopen("php://input", "rb");
-            if (!$input) {
-                throw new \RuntimeException("Could not open HTTP POST input stream");
+        // X-File-Field was added recently, in order to avoid API breakage, it
+        // remains optional, older JS still have versions will have nasty bugs.
+        if ($fieldname = $request->headers->get('X-File-Field', '')) {
+            if (!$config = $sessionHandler->getFieldConfig($fieldname)) {
+                throw $this->createAccessDeniedException();
             }
-            // @todo get user identifier if possible
-            $builder = new FileBuilder($filesize, $filename, $sessionHandler->getTemporaryFilePath($fieldname));
-            $written = $builder->write($input, $start, $length);
+            // Validate incomming file against stored field configuration.
+            // Configuration comes from session, there is no way the end user
+            // could have messed it up.
+            if ($message = $this->validateUploadedFile($config, $filename, $filesize)) {
+                return $this->json(['message' => $message], 403);
+            }
+            // If we have a config, and config orders us to move the file
+            // into another place, then do it.
+            $directory = $config->getTargetDirectory();
+            $strategy = $config->getNamingStrategy();
+        }
+
+        $builder = $this->buildFile(
+            $sessionHandler->getTemporaryFilePath($fieldname),
+            $filesize, $filename, $start, $length
+        );
+
+        $isComplete = $builder->isComplete();
+        $filepath = $builder->getAbsolutePath();
+        $fileUrl = null;
+
+        if ($isComplete && $directory) {
+            // Move the file to whatever place the configuration ordered us.
+            $filepath = $fileManager->renameIfNotWithin($filepath, $directory, 0, $strategy);
+            $file = $fileManager->createFile($filepath, true);
+            if ($fileUrl = $fileManager->getFileUrl($filepath)) {
+                $fileUrl = '/'.$fileUrl;
+            }
+        } else {
             $file = $builder->getFile();
-            $isComplete = $builder->isComplete();
-        } finally {
-            if ($input) {
-                @\fclose($input);
-            }
         }
-
-        $target = $builder->getAbsolutePath();
 
         return $this->json([
             'fid' => $file->getFilename(),
             'filename' => $file->getFilename(),
             'finished' => $isComplete,
-            'hash' => $isComplete ? \sha1_file($target) : null,
+            'hash' => $isComplete ? \sha1_file($filepath) : null,
             'mimetype' => $file->getMimeType(),
             'offset' => $builder->getOffset(),
             'preview' => $file->getFilename(),
-            'url' => $isComplete ? $fileManager->getFileUrl($target) : null,
-            'writen' => $written,
+            'url' => $fileUrl,
+            'writen' => $builder->getLastWriteSize(),
         ]);
     }
 

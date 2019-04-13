@@ -4,4 +4,4 @@ filechunk:
             maxsize: 10000000
             mimetypes: [image/jpeg, image/png]
             naming_strategy: date
-            target_directory: public://files/ckeditor
+            target_directory: public://ckeditor

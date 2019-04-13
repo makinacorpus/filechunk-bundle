@@ -13,6 +13,7 @@ final class FileBuilder
     private $file;
     private $filename;
     private $filesize;
+    private $lastWriteSize;
     private $offset = 0;
     private $path;
 
@@ -241,7 +242,15 @@ final class FileBuilder
             }
         }
 
-        return $writen;
+        return $this->lastWriteSize = $writen;
+    }
+
+    /**
+     * Get last write size in bytes
+     */
+    public function getLastWriteSize(): int
+    {
+        return (int)$this->lastWriteSize;
     }
 
     /**
