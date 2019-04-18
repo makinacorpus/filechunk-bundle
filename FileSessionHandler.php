@@ -48,6 +48,17 @@ class FileSessionHandler
     }
 
     /**
+     * @internal
+     *   For unit testing
+     */
+    public function regenerateToken() : string
+    {
+        $this->session->remove(self::SESSION_TOKEN);
+
+        return $this->getCurrentToken();
+    }
+
+    /**
      * Get upload directory
      */
     public function getUploadDirectory() : string

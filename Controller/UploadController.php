@@ -128,22 +128,6 @@ class UploadController extends Controller
                 return $this->translate("Maximum file size allowed is @mega mo", ['@mega' => round($options['maxSize'] / 1024 / 1024, 1)]);
             }
         }
-
-        // Validation basics
-// @todo This actually needs files to exists to guess
-//   and symfony does not implements a file extension mime type guesser:
-//       Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser
-//             if (!empty($options['mimeTypes'])) {
-//                 $allowed = $options['mimeTypes'];
-//                 if (!is_array($allowed)) {
-//                     $allowed = [$allowed];
-//                 }
-//                 $guesser = MimeTypeGuesser::getInstance();
-//                 $mimeType = $guesser->guess($filename);
-//                 if (!in_array($mimeType, $allowed)) {
-//                     return new JsonResponse(['message' => $this->translate("Allowed mime types are @mimes", ['@mimes' => implode(', ', $allowed)])], 403);
-//                 }
-//             }
     }
 
     /**
@@ -198,9 +182,9 @@ class UploadController extends Controller
                 throw new \RuntimeException("Could not open HTTP POST input stream");
             }
             // @todo get user identifier if possible
-            $builder    = new FileBuilder($filesize, $filename, $sessionHandler->getTemporaryFilePath($fieldname));
-            $written    = $builder->write($input, $start, $length);
-            $file       = $builder->getFile();
+            $builder = new FileBuilder($filesize, $filename, $sessionHandler->getTemporaryFilePath($fieldname));
+            $written = $builder->write($input, $start, $length);
+            $file = $builder->getFile();
             $isComplete = $builder->isComplete();
         } finally {
             if ($input) {
@@ -214,7 +198,7 @@ class UploadController extends Controller
             'preview'   => $file->getFilename(),
             'fid'       => $file->getFilename(),
             'writen'    => $written,
-            'hash'      => $isComplete ? md5_file($builder->getAbsolutePath()) : null,
+            'hash'      => $isComplete ? \sha1_file($builder->getAbsolutePath()) : null,
             'mimetype'  => $file->getMimeType(),
             'filename'  => $file->getFilename(),
         ]);

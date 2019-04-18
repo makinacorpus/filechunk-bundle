@@ -15,10 +15,22 @@ services:
 
     filechunk_chunked_file_form_type:
         class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
-        arguments: ['@filechunk.session_handler', '@router']
+        arguments: ["@filechunk.file_manager", "@filechunk.session_handler", "@router"]
         tags: [{name: form.type}]
 
     filechunk.session_handler:
         public: true
         class: MakinaCorpus\FilechunkBundle\FileSessionHandler
         arguments: ['@session', '%filechunk.upload_directory%']
+
+    MakinaCorpus\FilechunkBundle\FileSessionHandler:
+        public: true
+        alias: filechunk.session_handler
+
+    filechunk.file_manager:
+        public: false
+        class: MakinaCorpus\FilechunkBundle\FileManager
+
+    MakinaCorpus\FilechunkBundle\FileManager:
+        public: true
+        alias: filechunk.file_manager
