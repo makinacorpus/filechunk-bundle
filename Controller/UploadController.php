@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
 use MakinaCorpus\FilechunkBundle\FieldConfig;
+use MakinaCorpus\FilechunkBundle\FileEvent;
 use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -210,7 +212,8 @@ final class UploadController extends Controller
      * Upload endpoint.
      */
     public function upload(FileSessionHandler $sessionHandler,
-        FileManager $fileManager, Request $request): Response
+        FileManager $fileManager, Request $request,
+        EventDispatcherInterface $eventDispatcher): Response
     {
         if (!$request->isMethod('POST')) {
             throw $this->createAccessDeniedException();
@@ -240,6 +243,7 @@ final class UploadController extends Controller
 
         // X-File-Field was added recently, in order to avoid API breakage, it
         // remains optional, older JS still have versions will have nasty bugs.
+        $config = null;
         if ($fieldname = $request->headers->get('X-File-Field', '')) {
             if (!$config = $sessionHandler->getFieldConfig($fieldname)) {
                 throw $this->createAccessDeniedException();
@@ -261,26 +265,37 @@ final class UploadController extends Controller
             $filesize, $filename, $start, $length
         );
 
-        $isComplete = $builder->isComplete();
         $filepath = $builder->getAbsolutePath();
         $fileUrl = null;
+        $isComplete = $builder->isComplete();
+        $sha1sum = null;
 
         if ($isComplete && $directory) {
             // Move the file to whatever place the configuration ordered us.
             $filepath = $fileManager->renameIfNotWithin($filepath, $directory, 0, $strategy);
             $file = $fileManager->createFile($filepath, true);
-            if ($fileUrl = $fileManager->getFileUrl($filepath)) {
-                $fileUrl = '/'.$fileUrl;
-            }
         } else {
             $file = $builder->getFile();
         }
 
+        if ($isComplete) {
+            $sha1sum = \sha1_file($filepath);
+            $event = FileEvent::with($filepath, $filesize, $sha1sum, $file->getMimeType(), $config);
+            $eventDispatcher->dispatch(FileEvent::EVENT_UPLOAD_FINISHED, $event);
+            if ($event->hasFileMoved()) {
+                $filepath = $event->getFileUri();
+            }
+        }
+
+        if ($fileUrl = $fileManager->getFileUrl($filepath)) {
+            $fileUrl = '/'.$fileUrl;
+        }
+
         return $this->json([
             'fid' => $file->getFilename(),
-            'filename' => $file->getFilename(),
+            'filename' => \basename($filepath),
             'finished' => $isComplete,
-            'hash' => $isComplete ? \sha1_file($filepath) : null,
+            'hash' => $sha1sum,
             'mimetype' => $file->getMimeType(),
             'offset' => $builder->getOffset(),
             'preview' => $file->getFilename(),
