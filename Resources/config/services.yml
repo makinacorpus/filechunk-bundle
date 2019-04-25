@@ -3,10 +3,12 @@ parameters:
     env(FILE_PRIVATE_DIR): "%kernel.project_dir%/private"
     env(FILE_PUBLIC_DIR): "%kernel.project_dir%/public/files"
     env(FILE_UPLOAD_DIR): "%kernel.project_dir%/var/tmp/upload"
+    env(FILE_WEBROOT_DIR): "%kernel.project_dir%/public"
 
     filechunk.private_directory: "%env(resolve:FILE_PRIVATE_DIR)%"
     filechunk.public_directory: "%env(resolve:FILE_PUBLIC_DIR)%"
     filechunk.upload_directory: "%env(resolve:FILE_UPLOAD_DIR)%"
+    filechunk.webroot_directory: "%env(resolve:FILE_WEBROOT_DIR)%"
 
 services:
 

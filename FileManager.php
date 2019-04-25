@@ -19,6 +19,7 @@ final class FileManager
     const SCHEME_PUBLIC = 'public';
     const SCHEME_TEMPORARY = 'temporary';
     const SCHEME_UPLOAD = 'upload';
+    const SCHEME_WEBROOT = 'webroot';
 
     /**
      * On name conflict when moving a file, raise an exception, this is the

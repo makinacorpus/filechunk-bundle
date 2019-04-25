@@ -65,6 +65,8 @@ Per default, the bundle offers three schemes:
  - `temporary://` for temporary files, which will default to PHP configured
    temporary folder,
  - `upload://` for chunked file upload, which defaults to `temporary://filechunk/`
+ - `webroot://` for files that are in the public directory,
+   will default to `%kernel.project_dir/public`,
 
 Only the temporary one cannot be configured, all others can be set via
 the following `.env` file variables:
@@ -73,6 +75,7 @@ the following `.env` file variables:
 FILE_PRIVATE_DIR="%kernel.project_dir%/var/private"
 FILE_PUBLIC_DIR="%kernel.project_dir%/public/files"
 FILE_UPLOAD_DIR="%kernel.project_dir%/var/tmp/upload"
+FILE_WEBROOT_DIR="%kernel.project_dir%/public"
 ```
 
 ## Chunked file upload widget configuration
