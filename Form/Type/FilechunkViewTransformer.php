@@ -43,7 +43,7 @@ class FilechunkViewTransformer implements DataTransformerInterface
     /**
      * @codeCoverageIgnore
      */
-    private function failIfNotFileInstance($key, $file)
+    private function failIfNotFileInstance($key, $file) /* : void */
     {
         if (!$file instanceof File) {
             throw new TransformationFailedException(\sprintf(
