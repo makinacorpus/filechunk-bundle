@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace MakinaCorpus\FilechunkBundle;
 
 use MakinaCorpus\FilechunkBundle\StreamWrapper\LocalStreamWrapper;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\HttpFoundation\File\File;
 use Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser;
 
@@ -366,6 +368,32 @@ final class FileManager
         } while (\file_exists($candidate));
 
         return $candidate;
+    }
+
+    /**
+     * Use finder to extract files list from a directory
+     * @param $uri is the directory uri
+     * @param $pattern is an optionnal patteren restriction (like '*.csv')
+     * @param $createDirectoryIfNotExists is False by default, if true the $uri
+     *        directory would be created if not exists
+     */
+    public function ls(string $uri, $pattern='*', $createDirectoryIfNotExists=False): Finder
+    {
+
+        if (! $this->exists($uri)) {
+            if ($createDirectoryIfNotExists) {
+                $this->mkdir($uri);
+            } else {
+                throw new FileNotFoundException();
+            }
+        }
+        $finder = new Finder();
+        return $finder
+            ->ignoreUnreadableDirs()
+            ->followLinks()
+            ->files()
+            ->name($pattern)
+            ->in($this->getAbsolutePath($uri));
     }
 
     /**
