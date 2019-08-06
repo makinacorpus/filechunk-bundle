@@ -380,7 +380,6 @@ final class FileManager
      */
     public function ls(string $uri, $pattern = '*', $createDirectoryIfNotExists = false): Finder
     {
-
         if (! $this->exists($uri)) {
             if ($createDirectoryIfNotExists) {
                 $this->mkdir($uri);
