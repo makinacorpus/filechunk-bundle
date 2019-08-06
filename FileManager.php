@@ -372,12 +372,13 @@ final class FileManager
 
     /**
      * Use finder to extract files list from a directory
-     * @param $uri is the directory uri
-     * @param $pattern is an optionnal patteren restriction (like '*.csv')
-     * @param $createDirectoryIfNotExists is False by default, if true the $uri
-     *        directory would be created if not exists
+     * 
+     * @param string $uri is the directory uri
+     * @param string $pattern is an optionnal patteren restriction (like '*.csv')
+     * @param bool $createDirectoryIfNotExists is False by default, if true the $uri
+     *        directory would be created if not exists.
      */
-    public function ls(string $uri, $pattern='*', $createDirectoryIfNotExists=False): Finder
+    public function ls(string $uri, $pattern = '*', $createDirectoryIfNotExists = false): Finder
     {
 
         if (! $this->exists($uri)) {
@@ -388,6 +389,7 @@ final class FileManager
             }
         }
         $finder = new Finder();
+
         return $finder
             ->ignoreUnreadableDirs()
             ->followLinks()
