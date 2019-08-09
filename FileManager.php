@@ -47,6 +47,16 @@ final class FileManager
     const STRATEGY_RENAME_INC = 16;
 
     /**
+     * When moving files, on name conflict, by default move is prevented if
+     * the files shares the same content (tested via cheksum).
+     * Using this flag you will prevent this checksum test and allow
+     * a move on the same file. This can be used to ensure the rename()
+     * operation is really removing the source file from the initial
+     * directory, as it may not be the case withour this flag.
+     */
+    const ALLOW_MOVE_ON_SAME_CONTENT = 32;
+
+    /**
      * No strategy, just put the file in the destination folder, this is the
      * default behaviour.
      */
@@ -465,10 +475,10 @@ final class FileManager
 
             // Attempt a sha1 over both the file content, and do not fail
             // or proceed if files have the same type and sha1 sum.
-            // @todo this should not be a default behaviour, a user might
-            //   want to let same files to be uploaded.
-            if (self::unsafeIsDuplicateOf($filename, $destFilename)) {
-                return $destFilename;
+            if (! ($flags & self::ALLOW_MOVE_ON_SAME_CONTENT)) {
+                if (self::unsafeIsDuplicateOf($filename, $destFilename)) {
+                    return $destFilename;
+                }
             }
 
             if ($flags & self::MOVE_CONFLICT_OVERWRITE) {
