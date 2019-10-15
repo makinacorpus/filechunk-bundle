@@ -44,8 +44,6 @@ final class FileBuilder
 
         $fileSystem = new Filesystem();
         $fileSystem->mkdir(\dirname($this->getAbsolutePath()));
-
-        $this->readMetadataFile();
     }
 
     /**
@@ -79,6 +77,17 @@ final class FileBuilder
         $success = \file_put_contents($metadataFile, $contents);
         if (!$success) {
             throw new IOException(\sprintf("%s: could not write to file", $metadataFile));
+        }
+    }
+
+    /**
+     * Delete any remaining temporary file
+     */
+    private function deleteTemporaryFile(): void
+    {
+        $absolutePath = $this->getAbsolutePath();
+        if (\file_exists($absolutePath) && !@\unlink($absolutePath)) {
+            throw new IOException(sprintf("%s: could not delete file", $absolutePath));
         }
     }
 
@@ -212,9 +221,22 @@ final class FileBuilder
         $output = null;
         $writen = 0;
 
+        // If start is 0, this means the user uploads a new file.
+        // It's up to the business API using us to avoid name conflicts.
         try {
+            $this->readMetadataFile();
             $output = $this->openFile();
+        } catch (\Exception $e) {
+            if (0 === $start) {
+                $this->deleteMetadataFile();
+                $this->deleteTemporaryFile();
+                $output = $this->openFile();
+            } else {
+                throw $e;
+            }
+        }
 
+        try {
             // Write chunk into file.
             if (-1 === \fseek($output, $start)) {
                 throw new IOException("Could not seek output stream");
