@@ -133,21 +133,28 @@ class FilechunkViewTransformer implements DataTransformerInterface
                 $filename = (string)$filename; // This may be a default value.
             }
 
-            $target = $this->findAbsolutePathFromDefaultValues($filename);
+            $uploaded = \sprintf("%s/%s", $this->directory, $filename);
+            $uploadedExists = \file_exists($uploaded);
+            $default = $this->findAbsolutePathFromDefaultValues($filename);
+            $defaultExists = \file_exists($default);
 
-            if (!$target) { // File is not a default value.
-                if (!$sha1sum) {
-                    continue; // No SHA1, invalid file upload attempt.
-                }
-
-                $target = \sprintf("%s/%s", $this->directory, $filename);
-
-                if (!\file_exists($target) || \sha1_file($target) !== $sha1sum) {
+            if ($sha1sum && $uploadedExists) {
+                if ($sha1sum !== @\sha1_file($uploaded)) {
+                    // Unmatching sha1 means that the file was modified,
+                    // or the user attempt to craft the HTTP request. Just
+                    // force the default if exists.
+                    if ($defaultExists) {
+                        $ret[] = new file($default);
+                    }
+                    // Or just drop the invalid value.
                     continue;
                 }
+                // OK we have a valid incomming file.
+                $ret[] = new File($uploaded);
+            } else if ($defaultExists) {
+                // No upload file, set the default
+                $ret[] = new file($default);
             }
-
-            $ret[] = new File($target);
         }
 
         return $ret;
