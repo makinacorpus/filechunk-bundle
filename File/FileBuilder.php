@@ -214,10 +214,6 @@ final class FileBuilder
      */
     public function write($input, int $start, ?int $length = null)
     {
-        if ($this->offset !== $start) {
-            return false;
-        }
-
         $output = null;
         $writen = 0;
 
@@ -234,6 +230,10 @@ final class FileBuilder
             } else {
                 throw $e;
             }
+        }
+
+        if ($this->offset !== $start) {
+            return false;
         }
 
         try {
