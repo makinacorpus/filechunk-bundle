@@ -9,13 +9,13 @@ use MakinaCorpus\FilechunkBundle\FileEvent;
 use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-final class UploadController extends Controller
+final class UploadController extends AbstractController
 {
     /**
      * Translate message
@@ -281,7 +281,7 @@ final class UploadController extends Controller
         if ($isComplete) {
             $sha1sum = \sha1_file($filepath);
             $event = FileEvent::with($filepath, $filesize, $sha1sum, $file->getMimeType(), $config);
-            $eventDispatcher->dispatch(FileEvent::EVENT_UPLOAD_FINISHED, $event);
+            $eventDispatcher->dispatch($event, FileEvent::EVENT_UPLOAD_FINISHED);
             if ($event->hasFileMoved()) {
                 $filepath = $event->getFileUri();
             }

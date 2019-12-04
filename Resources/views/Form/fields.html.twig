@@ -1,18 +1,16 @@
 
 {% block filechunk_widget -%}
-  {% spaceless %}
-    <div class="filechunk-widget">
-      <div class="filechunk-widget-table">
-        <div class="filechunk-widget-row">
-          <div class="filechunk-widget-drop">
-            <span style="" class="text-muted message">{{ "Drag and drop files or click here to add more files..."|trans }}</span>
-            {{ form_widget(form.file) }}
-          </div>
+  <div class="filechunk-widget">
+    <div class="filechunk-widget-table">
+      <div class="filechunk-widget-row">
+        <div class="filechunk-widget-drop">
+          <span style="" class="text-muted message">{{ "Drag and drop files or click here to add more files..."|trans }}</span>
+          {{ form_widget(form.file) }}
         </div>
       </div>
-      <input type="hidden" rel="fid" name="{{ fid_name }}" id="{{ fid_id }}" value="{{ value.fid|e }}">
     </div>
-  {% endspaceless %}
+    <input type="hidden" rel="fid" name="{{ fid_name }}" id="{{ fid_id }}" value="{{ value.fid|e }}">
+  </div>
 {%- endblock filechunk_widget %}
 
 {% block filechunk_row -%}

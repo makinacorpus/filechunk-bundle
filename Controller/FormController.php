@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace MakinaCorpus\FilechunkBundle\Controller;
 
 use MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType;
-use Symfony\Bundle\FrameworkBundle\Controller\Controller;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\File;
 
-final class FormController extends Controller
+final class FormController extends AbstractController
 {
     public function testAction(Request $request): Response
     {
