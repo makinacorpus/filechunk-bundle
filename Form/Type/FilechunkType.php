@@ -76,7 +76,8 @@ class FilechunkType extends AbstractType
      */
     private function aggregatesContraints($constraints, array &$attributes) : array
     {
-        $maxSize = $mimeTypes = $maxCount = null;
+        $maxSize = $maxCount = null;
+        $mimeTypes = [];
 
         if (!empty($constraints)) {
             foreach ($constraints as $constraint) {
@@ -88,7 +89,7 @@ class FilechunkType extends AbstractType
                         $maxSize = $constraint->maxSize;
                     }
                     if ($constraint->mimeTypes) {
-                        $mimeTypes = $constraint->mimeTypes;
+                        $mimeTypes = \array_merge($mimeTypes, $constraint->mimeTypes);
                     }
                 }
 
@@ -108,7 +109,7 @@ class FilechunkType extends AbstractType
                         $maxSize = $nestedMaxSize;
                     }
                     if ($nestedMimeTypes) {
-                        $mimeTypes = $mimeTypes;
+                        $mimeTypes = \array_merge($mimeTypes, $nestedMimeTypes);
                     }
                     if ($nestedMaxCount) {
                         $maxCount = $maxCount;
@@ -159,7 +160,7 @@ class FilechunkType extends AbstractType
         // the user he's doing something forbidden before uploading the
         // whole file.
         $this->sessionHandler->addFieldConfig(FieldConfig::fromArray(
-            $name, ['maxsize' => $maxSize, 'mimetype' => $mimeTypes, 'maxcount' => $maxCount]
+            $name, ['maxsize' => $maxSize, 'mimetypes' => $mimeTypes, 'maxcount' => $maxCount]
         ));
 
         $builder

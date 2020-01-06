@@ -112,6 +112,14 @@ final class FieldConfig
     }
 
     /**
+     * Return allowed mimetypes
+     */
+    public function getAllowedMimeTypes(): ?array
+    {
+        return $this->mimeTypes;
+    }
+
+    /**
      * Get field name
      */
     public function getName(): string

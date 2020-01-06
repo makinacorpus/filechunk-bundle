@@ -268,6 +268,22 @@ final class FileBuilder
     }
 
     /**
+     * Delete file
+     */
+    public function delete(): bool
+    {
+        $deleted = false;
+        if ($absolutePath = $this->getAbsolutePath()) {
+            $deleted = $deleted || @\unlink($absolutePath);
+        }
+        if ($metadataFile = $absolutePath.'.metadata.json') {
+            $deleted = $deleted || @\unlink($metadataFile);
+        }
+
+        return $deleted;
+    }
+
+    /**
      * Get last write size in bytes
      */
     public function getLastWriteSize(): int

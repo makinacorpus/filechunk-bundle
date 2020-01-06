@@ -10,21 +10,26 @@ use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Mime\MimeTypes;
+use Symfony\Component\Validator\Constraints\File as FileConstraint;
 
 final class UploadController extends AbstractController
 {
     /**
      * Translate message
-     *
-     * @return string
      */
     private function translate(string $message, array $args = []): string
     {
-        return $this->get('translator')->trans($message, $args);
+        try {
+            return $this->get('translator')->trans($message, $args);
+        } catch (ServiceNotFoundException $e) {
+            return \strtr($message, $args);
+        }
     }
 
     /**
@@ -73,9 +78,6 @@ final class UploadController extends AbstractController
         if ($stop < $start) {
             throw $this->createAccessDeniedException(); // Invalid request.
         }
-        if ($start === $stop) {
-            throw $this->createAccessDeniedException(); // Cannot import '0' sized file.
-        }
 
         return [(int)$start, (int)$stop, (int)$filesize];
     }
@@ -113,8 +115,7 @@ final class UploadController extends AbstractController
     /**
      * Validate uploaded file using session token.
      */
-    private function validateUploadedFile(FieldConfig $config,
-        string $filename, int $filesize): ?string
+    private function validateUploadedFile(FieldConfig $config, string $filename, int $filesize): ?string
     {
         // @todo should be modved out to another class, this is not the
         //    controller responsability to do this.
@@ -125,24 +126,31 @@ final class UploadController extends AbstractController
             );
         }
 
-        // Validation basics
-// @todo This actually needs files to exists to guess
-//   and symfony does not implements a file extension mime type guesser:
-//       Symfony\Component\HttpFoundation\File\MimeType\MimeTypeGuesser
-//             if (!empty($options['mimeTypes'])) {
-//                 $allowed = $options['mimeTypes'];
-//                 if (!is_array($allowed)) {
-//                     $allowed = [$allowed];
-//                 }
-//                 $guesser = MimeTypeGuesser::getInstance();
-//                 $mimeType = $guesser->guess($filename);
-//                 if (!in_array($mimeType, $allowed)) {
-//                     return new JsonResponse(['message' => $this->translate(
-//                         "Allowed mime types are @mimes",
-//                         ['@mimes' => implode(', ', $allowed)]
-//                     )], 403);
-//                 }
-//             }
+        return null;
+    }
+
+    /**
+     * Validate uploaded file mimetype using session token.
+     */
+    private function validateMimeType(FieldConfig $config, string $filename): ?string
+    {
+        if (!\class_exists(MimeTypes::class)) {
+            return null; // Symfony >= 4.4 required, other are not supported.
+        }
+
+        if ($mimeType = MimeTypes::getDefault()->guessMimeType($filename)) {
+            if (!$config->isMimeTypeAllowed($mimeType)) {
+                // Fake a file constraint for transparent translator support with
+                // default Symfony translation.
+                $constraint = new FileConstraint([
+                    'mimeTypes' => $config->getAllowedMimeTypes(),
+                ]);
+                return $this->translate($constraint->mimeTypesMessage, [
+                    '{{ type }}' => $mimeType,
+                    '{{ types }}' => implode(', ', $constraint->mimeTypes),
+                ]);
+            }
+        }
 
         return null;
     }
@@ -266,6 +274,13 @@ final class UploadController extends AbstractController
         );
 
         $filepath = $builder->getAbsolutePath();
+        if (0 === $start && $config) {
+            if ($message = $this->validateMimeType($config, $filepath)) {
+                $builder->delete();
+                return $this->json(['message' => $message], 403);
+            }
+        }
+
         $fileUrl = null;
         $isComplete = $builder->isComplete();
         $sha1sum = null;
