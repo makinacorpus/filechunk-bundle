@@ -14,6 +14,7 @@ services:
 
     MakinaCorpus\FilechunkBundle\Controller\UploadController:
         public: false
+        autowire: true
         tags: ["controller.service_arguments"]
 
     filechunk.command.cleanup_temporary_files:
