@@ -12,7 +12,7 @@ use Symfony\Component\Filesystem\Exception\IOException;
 /**
  * File manager tests for the rename and alternatives functions
  */
-final class FileManagerRenameTest extends TestCase
+final class FileManagerMoveTest extends TestCase
 {
     private function createFileManager(): FileManager
     {
