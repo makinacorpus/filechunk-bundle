@@ -188,7 +188,7 @@ final class FileBuilder
             }
         } catch (\Exception $e) {
             // Always close the file resource in case of error
-            if ($fileHandle) {
+            if (\is_resource($fileHandle)) {
                 @\fclose($fileHandle);
             }
 
@@ -259,7 +259,7 @@ final class FileBuilder
                 $this->writeMetadataFile();
             }
         } finally {
-            if ($output) {
+            if (\is_resource($output)) {
                 @\fclose($output);
             }
         }

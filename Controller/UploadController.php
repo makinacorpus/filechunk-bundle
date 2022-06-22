@@ -210,7 +210,7 @@ final class UploadController extends AbstractController
             return $builder;
 
         } finally {
-            if ($input) {
+            if (\is_resource($input)) {
                 @\fclose($input);
             }
         }

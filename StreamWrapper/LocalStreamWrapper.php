@@ -114,7 +114,10 @@ class LocalStreamWrapper
      */
     public function stream_close()
     {
-        return \fclose($this->handle);
+        if (\is_resource($this->handle)) {
+            return \fclose($this->handle);
+        }
+        return false;
     }
 
     /**
