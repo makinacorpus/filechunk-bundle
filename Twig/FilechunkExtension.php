@@ -67,7 +67,7 @@ final class FilechunkExtension extends AbstractExtension
         }
 
         if ($absolute) {
-            if ($request = $this->requestStack->getMasterRequest()) {
+            if ($request = $this->requestStack->getMainRequest()) {
                 if ($basePath = $request->getBasePath()) {
                     return $request->getSchemeAndHttpHost().'/'.$basePath.'/'.$relativePath;
                 }
