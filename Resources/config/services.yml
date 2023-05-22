@@ -14,7 +14,6 @@ services:
 
     MakinaCorpus\FilechunkBundle\Controller\UploadController:
         public: false
-        autowire: true
         tags: ["controller.service_arguments"]
 
     filechunk.command.cleanup_temporary_files:
@@ -34,7 +33,7 @@ services:
     filechunk.session_handler:
         public: false
         class: MakinaCorpus\FilechunkBundle\FileSessionHandler
-        arguments: ["@filechunk.file_manager", "@session"]
+        arguments: ["@filechunk.file_manager", "@request_stack"]
 
     MakinaCorpus\FilechunkBundle\FileSessionHandler:
         public: true

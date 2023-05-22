@@ -6,6 +6,7 @@ namespace MakinaCorpus\FilechunkBundle;
 
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOException;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 final class FileSessionHandler
@@ -13,18 +14,19 @@ final class FileSessionHandler
     const SESSION_TOKEN = 'filechunk_token';
 
     private $debug;
-    private $fileManager;
     private $globalFields = [];
-    private $session;
     private $uploadDirectory;
 
     /**
      * Default constructor
      */
-    public function __construct(FileManager $fileManager, SessionInterface $session)
+    public function __construct(private FileManager $fileManager, private RequestStack $requestStack)
     {
-        $this->fileManager = $fileManager;
-        $this->session = $session;
+    }
+
+    protected function getSession(): SessionInterface
+    {
+        return $this->requestStack->getMainRequest()->getSession();
     }
 
     /**
@@ -32,9 +34,9 @@ final class FileSessionHandler
      */
     public function getCurrentToken() : string
     {
-        if (!$token = $this->session->get(self::SESSION_TOKEN)) {
+        if (!$token = $this->getSession()->get(self::SESSION_TOKEN)) {
             $token = \base64_encode(\mt_rand().\mt_rand().\mt_rand());
-            $this->session->set(self::SESSION_TOKEN, $token);
+            $this->getSession()->set(self::SESSION_TOKEN, $token);
         }
 
         return $token;
@@ -46,7 +48,7 @@ final class FileSessionHandler
      */
     public function regenerateToken() : string
     {
-        $this->session->remove(self::SESSION_TOKEN);
+        $this->getSession()->remove(self::SESSION_TOKEN);
 
         return $this->getCurrentToken();
     }
@@ -99,7 +101,7 @@ final class FileSessionHandler
      */
     public function isTokenValid(string $token) : bool
     {
-        return $this->session->has(self::SESSION_TOKEN) && $this->session->get(self::SESSION_TOKEN) === $token;
+        return $this->getSession()->has(self::SESSION_TOKEN) && $this->session->get(self::SESSION_TOKEN) === $token;
     }
 
     /**
@@ -131,7 +133,7 @@ final class FileSessionHandler
      */
     public function addFieldConfig(FieldConfig $config): void
     {
-        $this->session->set($this->getFieldSessionKey($config->getName()), $config);
+        $this->getSession()->set($this->getFieldSessionKey($config->getName()), $config);
     }
 
     /**
@@ -139,6 +141,6 @@ final class FileSessionHandler
      */
     public function getFieldConfig(string $name) : ?FieldConfig
     {
-        return $this->session->get($this->getFieldSessionKey($name)) ?? $this->getGlobalFieldConfig($name);
+        return $this->getSession()->get($this->getFieldSessionKey($name)) ?? $this->getGlobalFieldConfig($name);
     }
 }
