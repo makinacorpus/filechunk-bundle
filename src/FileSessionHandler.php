@@ -4,152 +4,53 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
-use MakinaCorpus\Files\FileManager;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Filesystem\Exception\IOException;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\SessionInterface;
-
-final class FileSessionHandler
+interface FileSessionHandler
 {
     const SESSION_TOKEN = 'filechunk_token';
 
-    private $debug;
-    private $fileManager;
-    private $globalFields = [];
-    private $requestStack;
-    private $uploadDirectory;
-
     /**
-     * Default constructor
+     * Get and generated if missing the global security token.
      */
-    public function __construct(FileManager $fileManager, RequestStack $requestStack)
-    {
-        $this->fileManager = $fileManager;
-        $this->requestStack = $requestStack;
-    }
-
-    protected function getSession(): SessionInterface
-    {
-        return $this->requestStack->getSession();
-    }
-
-    /**
-     * Get and generated if missing the global security token
-     */
-    public function getCurrentToken() : string
-    {
-        $session = $this->getSession();
-
-        if (!$token = $session->get(self::SESSION_TOKEN)) {
-            $token = \base64_encode(\mt_rand().\mt_rand().\mt_rand());
-            $session->set(self::SESSION_TOKEN, $token);
-        }
-
-        return $token;
-    }
+    public function getCurrentToken(): string;
 
     /**
      * @internal
-     *   For unit testing
+     *   For unit testing.
      */
-    public function regenerateToken() : string
-    {
-        $this->getSession()->remove(self::SESSION_TOKEN);
-
-        return $this->getCurrentToken();
-    }
+    public function regenerateToken(): string;
 
     /**
-     * Find upload directory and create it if it does not exist
+     * Get upload directory.
      */
-    private function ensureUploadDirectory(): string
-    {
-        if ($this->fileManager->isKnownScheme(FileManager::SCHEME_UPLOAD)) {
-            $directory = $this->fileManager->getWorkingDirectory(FileManager::SCHEME_UPLOAD);
-        } else if ($this->fileManager->isKnownScheme(FileManager::SCHEME_TEMPORARY)) {
-            $directory = $this->fileManager->getWorkingDirectory(FileManager::SCHEME_TEMPORARY).'/filechunk';
-        } else {
-            $directory = \sys_get_temp_dir().'/filechunk';
-        }
-
-        if (\file_exists($directory)) {
-            if (!\is_dir($directory)) {
-                throw new IOException(\sprintf("%s: not a directory", $directory));
-            }
-            if (!\is_writable($directory)) {
-                throw new IOException(\sprintf("%s: is not writable", $directory));
-            }
-        } else {
-            (new Filesystem())->mkdir($directory);
-        }
-
-        return $directory;
-    }
+    public function getUploadDirectory(): string;
 
     /**
-     * Get upload directory
+     * From the given field name, get the temporary file name.
      */
-    public function getUploadDirectory() : string
-    {
-        return $this->uploadDirectory ?? ($this->uploadDirectory = $this->ensureUploadDirectory());
-    }
+    public function getTemporaryFilePath(?string $name = null): string;
 
     /**
-     * From the given field name, get the temporary file name
+     * Ensure that given input is valid.
      */
-    public function getTemporaryFilePath(?string $name = null) : string
-    {
-        return $this->getUploadDirectory().'/'.$this->getCurrentToken().($name ? '/'.$name : '');
-    }
-
-    /**
-     * Ensure that given input is valid
-     */
-    public function isTokenValid(string $token) : bool
-    {
-        $session = $this->getSession();
-
-        return $session->has(self::SESSION_TOKEN) && $session->get(self::SESSION_TOKEN) === $token;
-    }
-
-    /**
-     * Create a session key for given field name
-     */
-    private function getFieldSessionKey(string $name) : string
-    {
-        return 'filechunk_'.$this->getCurrentToken().'_'.$name;
-    }
+    public function isTokenValid(string $token): bool;
 
     /**
      * Add global field config
      */
-    public function addGlobalFieldConfig(FieldConfig $config): void
-    {
-        $this->globalFields[$config->getName()] = $config;
-    }
+    public function addGlobalFieldConfig(FieldConfig $config): void;
 
     /**
      * Get global field config
      */
-    public function getGlobalFieldConfig(string $name): ?FieldConfig
-    {
-        return $this->globalFields[$name] ?? null;
-    }
+    public function getGlobalFieldConfig(string $name): ?FieldConfig;
 
     /**
      * Add a single field configuration
      */
-    public function addFieldConfig(FieldConfig $config): void
-    {
-        $this->getSession()->set($this->getFieldSessionKey($config->getName()), $config);
-    }
+    public function addFieldConfig(FieldConfig $config): void;
 
     /**
      * Get a single field configuration
      */
-    public function getFieldConfig(string $name) : ?FieldConfig
-    {
-        return $this->getSession()->get($this->getFieldSessionKey($name)) ?? $this->getGlobalFieldConfig($name);
-    }
+    public function getFieldConfig(string $name) : ?FieldConfig;
 }

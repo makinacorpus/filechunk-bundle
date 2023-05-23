@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace MakinaCorpus\FilechunkBundle\Tests\Unit;
 
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
+use MakinaCorpus\FilechunkBundle\FileSessionHandler\SessionFileSessionHandler;
 use MakinaCorpus\Files\FileManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Session\Session;
@@ -36,7 +37,7 @@ final class FileSessionHandlerTokenTest extends TestCase
 
     private function createFileSessionHandler(): FileSessionHandler
     {
-        return new FileSessionHandler(
+        return new SessionFileSessionHandler(
             $this->createFileManager(),
             $this->createSession()
         );

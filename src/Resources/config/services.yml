@@ -20,7 +20,7 @@ services:
 
     filechunk.session_handler:
         public: false
-        class: MakinaCorpus\FilechunkBundle\FileSessionHandler
+        class: MakinaCorpus\FilechunkBundle\FileSessionHandler\RequestStackFileSessionHandler
         arguments: ["@files.file_manager", "@request_stack"]
 
     MakinaCorpus\FilechunkBundle\FileSessionHandler:
