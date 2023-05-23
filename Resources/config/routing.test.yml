@@ -1,6 +1,0 @@
-
-filechunk_test:
-    path: /filechunk/test
-    defaults:
-        # This will not work with Symfony 5
-        _controller: FilechunkBundle:Form:test

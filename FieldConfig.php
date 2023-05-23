@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
+use MakinaCorpus\Files\FileManager;
+
 final class FieldConfig
 {
     private $maxCount = 1;

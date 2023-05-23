@@ -1,15 +1,3 @@
-parameters:
-
-    env(FILE_PRIVATE_DIR): "%kernel.project_dir%/private"
-    env(FILE_PUBLIC_DIR): "%kernel.project_dir%/public/files"
-    env(FILE_UPLOAD_DIR): "%kernel.project_dir%/var/tmp/upload"
-    env(FILE_WEBROOT_DIR): "%kernel.project_dir%/public"
-
-    filechunk.private_directory: "%env(resolve:FILE_PRIVATE_DIR)%"
-    filechunk.public_directory: "%env(resolve:FILE_PUBLIC_DIR)%"
-    filechunk.upload_directory: "%env(resolve:FILE_UPLOAD_DIR)%"
-    filechunk.webroot_directory: "%env(resolve:FILE_WEBROOT_DIR)%"
-
 services:
 
     MakinaCorpus\FilechunkBundle\Controller\UploadController:
@@ -27,24 +15,14 @@ services:
     filechunk_chunked_file_form_type:
         public: false
         class: MakinaCorpus\FilechunkBundle\Form\Type\FilechunkType
-        arguments: ["@filechunk.file_manager", "@filechunk.session_handler", "@router"]
+        arguments: ["@files.file_manager", "@filechunk.session_handler", "@router"]
         tags: [{name: form.type}]
 
     filechunk.session_handler:
         public: false
         class: MakinaCorpus\FilechunkBundle\FileSessionHandler
-        arguments: ["@filechunk.file_manager", "@request_stack"]
+        arguments: ["@files.file_manager", "@request_stack"]
 
     MakinaCorpus\FilechunkBundle\FileSessionHandler:
         public: true
         alias: filechunk.session_handler
-
-    filechunk.file_manager:
-        public: false
-        class: MakinaCorpus\FilechunkBundle\FileManager
-        arguments:
-            $webroot: "%kernel.project_dir%/public"
-
-    MakinaCorpus\FilechunkBundle\FileManager:
-        public: true
-        alias: filechunk.file_manager

@@ -6,9 +6,9 @@ namespace MakinaCorpus\FilechunkBundle\Controller;
 
 use MakinaCorpus\FilechunkBundle\FieldConfig;
 use MakinaCorpus\FilechunkBundle\FileEvent;
-use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use MakinaCorpus\FilechunkBundle\File\FileBuilder;
+use MakinaCorpus\Files\FileManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Exception\ServiceNotFoundException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -210,7 +210,11 @@ final class UploadController extends AbstractController
             return $builder;
 
         } finally {
-            if (\is_resource($input)) {
+            // 'Unknown' mean the stream was already closed.
+            // Symfony error handler, when in debug mode, will convert the
+            // silenced erroneous \fclose() call into an exception and prevent
+            // this from working gracefully.
+            if (\is_resource($input) && 'Unknown' !== \get_resource_type($input)) {
                 @\fclose($input);
             }
         }
@@ -288,7 +292,7 @@ final class UploadController extends AbstractController
         if ($isComplete && $directory) {
             // Move the file to whatever place the configuration ordered us.
             $filepath = $fileManager->renameIfNotWithin($filepath, $directory, 0, $strategy);
-            $file = $fileManager->createFile($filepath, true);
+            $file = $fileManager->createSymfonyFile($filepath, true);
         } else {
             $file = $builder->getFile();
         }

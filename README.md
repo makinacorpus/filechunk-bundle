@@ -1,18 +1,8 @@
 # File upload widget and file management for Symfony
 
-This bundle provides various helpers for managing files in Symfony:
-
- - a chunked file upload endpoint, that is tailored to be used with the
-   https://github.com/makinacorpus/filechunk-front widget, but that may
-   be used by any other component,
-
- - a file manager that allows you to register logical schemes (such as
-   `upload://`, `temporary://`, ... and convert back and forth absolute
-   path names and scheme-based URIs, allowing you to store protocol
-   relative URIs in database avoiding absolute path handling nightmare,
-
- - provides a PHP StreamWrapper implementation for transparent usage of
-   custom URI schemes.
+This bundle provides a chunked file upload endpoint, that is tailored to be
+used with the https://github.com/makinacorpus/filechunk-front widget, but
+that may be used by any other component,
 
 The chunked file upload endpoint allows:
 
@@ -207,12 +197,3 @@ in the whole validator chain, this way:
  - You need recent browsers.
 
 That's pretty much it, have fun!
-
-# Credits
-
-This code includes sligthly modified code from Drupal 8.x https://www.drupal.org
-project, located in the `./StreamWrapper` directory, all credits to their
-original authors.
-
-All remaining code is an original creation of Makina Corpus
-https://www.makina-corpus.com

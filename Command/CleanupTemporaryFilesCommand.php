@@ -6,7 +6,8 @@ namespace MakinaCorpus\FilechunkBundle\Command;
 
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
 use Psr\Log\LogLevel;
-use Psr\Log\LoggerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -22,11 +23,11 @@ use Symfony\Component\Filesystem\Exception\IOExceptionInterface;
  * still being uploaded. Only side effect is that the download should probably
  * just restart from the begining on the frontend side.
  */
-final class CleanupTemporaryFilesCommand extends Command
+final class CleanupTemporaryFilesCommand extends Command implements LoggerAwareInterface
 {
-    private $logger;
-    private $directory;
-    private $sessionHandler;
+    use LoggerAwareTrait;
+
+    private FileSessionHandler $sessionHandler;
 
     /**
      * {@inheritdoc}
@@ -38,14 +39,6 @@ final class CleanupTemporaryFilesCommand extends Command
         $this->setDefinition([
             new InputOption('dry-run', 'd', InputOption::VALUE_NONE, "Do not delete files, just output outdated file list."),
         ]);
-    }
-
-    /**
-     * Set logger
-     */
-    public function setLogger(LoggerInterface $logger): void
-    {
-        $this->logger = $logger;
     }
 
     /**
@@ -143,5 +136,7 @@ final class CleanupTemporaryFilesCommand extends Command
         }
 
         $this->log($output, \sprintf("%d found, %d removed, %d errors", $found, $removed, $errors));
+
+        return self::SUCCESS;
     }
 }

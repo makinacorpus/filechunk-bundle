@@ -187,8 +187,12 @@ final class FileBuilder
                 }
             }
         } catch (\Exception $e) {
-            // Always close the file resource in case of error
-            if (\is_resource($fileHandle)) {
+            // Always close the file resource in case of error.
+            // 'Unknown' mean the stream was already closed.
+            // Symfony error handler, when in debug mode, will convert the
+            // silenced erroneous \fclose() call into an exception and prevent
+            // this from working gracefully.
+            if (\is_resource($fileHandle) && 'Unknown' !== \get_resource_type($fileHandle)) {
                 @\fclose($fileHandle);
             }
 
@@ -248,9 +252,6 @@ final class FileBuilder
                 $writen = \stream_copy_to_stream($input, $output);
             }
 
-            @\fclose($output);
-            @\fclose($input);
-
             $this->offset = $start + $length;
 
             if ($this->isComplete()) {
@@ -259,7 +260,11 @@ final class FileBuilder
                 $this->writeMetadataFile();
             }
         } finally {
-            if (\is_resource($output)) {
+            // 'Unknown' mean the stream was already closed.
+            // Symfony error handler, when in debug mode, will convert the
+            // silenced erroneous \fclose() call into an exception and prevent
+            // this from working gracefully.
+            if (\is_resource($output) && 'Unknown' !== \get_resource_type($output)) {
                 @\fclose($output);
             }
         }

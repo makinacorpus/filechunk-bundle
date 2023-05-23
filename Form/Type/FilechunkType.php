@@ -3,8 +3,8 @@
 namespace MakinaCorpus\FilechunkBundle\Form\Type;
 
 use MakinaCorpus\FilechunkBundle\FieldConfig;
-use MakinaCorpus\FilechunkBundle\FileManager;
 use MakinaCorpus\FilechunkBundle\FileSessionHandler;
+use MakinaCorpus\Files\FileManager;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -22,9 +22,9 @@ class FilechunkType extends AbstractType
 {
     const SESSION_TOKEN = 'filechunk_token';
 
-    private $fileManager;
-    private $router;
-    private $sessionHandler;
+    private FileManager $fileManager;
+    private FileSessionHandler $sessionHandler;
+    private RouterInterface $router;
 
     /**
      * Default constructor

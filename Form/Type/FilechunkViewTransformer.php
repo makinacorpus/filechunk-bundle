@@ -2,7 +2,7 @@
 
 namespace MakinaCorpus\FilechunkBundle\Form\Type;
 
-use MakinaCorpus\FilechunkBundle\FileManager;
+use MakinaCorpus\Files\FileManager;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\Form\Exception\TransformationFailedException;
 use Symfony\Component\HttpFoundation\File\File;
@@ -21,8 +21,8 @@ use Symfony\Component\HttpFoundation\File\File;
  */
 class FilechunkViewTransformer implements DataTransformerInterface
 {
-    private $directory;
-    private $fileManager;
+    private FileManager $fileManager;
+    private string $directory;
 
     /**
      * Hoping that, during the widget life time, this instance will be kept
@@ -144,16 +144,16 @@ class FilechunkViewTransformer implements DataTransformerInterface
                     // or the user attempt to craft the HTTP request. Just
                     // force the default if exists.
                     if ($defaultExists) {
-                        $ret[] = new file($default);
+                        $ret[] = new UploadedFile($default, true);
                     }
                     // Or just drop the invalid value.
                     continue;
                 }
                 // OK we have a valid incomming file.
-                $ret[] = new File($uploaded);
+                $ret[] = new UploadedFile($uploaded, false);
             } else if ($defaultExists) {
                 // No upload file, set the default
-                $ret[] = new file($default);
+                $ret[] = new UploadedFile($default, true);
             }
         }
 

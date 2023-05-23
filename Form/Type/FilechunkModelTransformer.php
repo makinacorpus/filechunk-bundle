@@ -2,7 +2,7 @@
 
 namespace MakinaCorpus\FilechunkBundle\Form\Type;
 
-use MakinaCorpus\FilechunkBundle\FileManager;
+use MakinaCorpus\Files\FileManager;
 use Symfony\Component\Form\DataTransformerInterface;
 use Symfony\Component\HttpFoundation\File\File;
 
@@ -16,9 +16,10 @@ use Symfony\Component\HttpFoundation\File\File;
  */
 class FilechunkModelTransformer implements DataTransformerInterface
 {
-    private $asFiles = true;
-    private $fileManager;
-    private $isMultiple = false;
+    private FileManager $fileManager;
+
+    private bool $asFiles = true;
+    private bool $isMultiple = false;
 
     /**
      * Default constructor
@@ -37,7 +38,7 @@ class FilechunkModelTransformer implements DataTransformerInterface
      */
     private function modelToNorm($file): File
     {
-        return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file, false);
+        return ($file instanceof File) ? $file : $this->fileManager->createSymfonyFile((string) $file, false);
     }
 
     /**
@@ -48,10 +49,10 @@ class FilechunkModelTransformer implements DataTransformerInterface
     private function normToModel($file)
     {
         if ($this->asFiles) {
-            return ($file instanceof File) ? $file : $this->fileManager->createFile((string)$file, false);
+            return ($file instanceof File) ? $file : $this->fileManager->createSymfonyFile((string) $file, false);
         }
 
-        return $this->fileManager->getURI(($file instanceof File) ? $file->getRealPath() : (string)$file);
+        return $this->fileManager->getURI(($file instanceof File) ? $file->getRealPath() : (string) $file);
     }
 
     /**

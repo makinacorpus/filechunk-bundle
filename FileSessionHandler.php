@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace MakinaCorpus\FilechunkBundle;
 
+use MakinaCorpus\Files\FileManager;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Filesystem\Exception\IOException;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -14,19 +15,23 @@ final class FileSessionHandler
     const SESSION_TOKEN = 'filechunk_token';
 
     private $debug;
+    private $fileManager;
     private $globalFields = [];
+    private $requestStack;
     private $uploadDirectory;
 
     /**
      * Default constructor
      */
-    public function __construct(private FileManager $fileManager, private RequestStack $requestStack)
+    public function __construct(FileManager $fileManager, RequestStack $requestStack)
     {
+        $this->fileManager = $fileManager;
+        $this->requestStack = $requestStack;
     }
 
     protected function getSession(): SessionInterface
     {
-        return $this->requestStack->getMainRequest()->getSession();
+        return $this->requestStack->getSession();
     }
 
     /**
@@ -34,9 +39,11 @@ final class FileSessionHandler
      */
     public function getCurrentToken() : string
     {
-        if (!$token = $this->getSession()->get(self::SESSION_TOKEN)) {
+        $session = $this->getSession();
+
+        if (!$token = $session->get(self::SESSION_TOKEN)) {
             $token = \base64_encode(\mt_rand().\mt_rand().\mt_rand());
-            $this->getSession()->set(self::SESSION_TOKEN, $token);
+            $session->set(self::SESSION_TOKEN, $token);
         }
 
         return $token;
@@ -101,7 +108,9 @@ final class FileSessionHandler
      */
     public function isTokenValid(string $token) : bool
     {
-        return $this->getSession()->has(self::SESSION_TOKEN) && $this->session->get(self::SESSION_TOKEN) === $token;
+        $session = $this->getSession();
+
+        return $session->has(self::SESSION_TOKEN) && $session->get(self::SESSION_TOKEN) === $token;
     }
 
     /**
