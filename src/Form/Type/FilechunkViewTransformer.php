@@ -136,7 +136,7 @@ class FilechunkViewTransformer implements DataTransformerInterface
             $uploaded = \sprintf("%s/%s", $this->directory, $filename);
             $uploadedExists = \file_exists($uploaded);
             $default = $this->findAbsolutePathFromDefaultValues($filename);
-            $defaultExists = \file_exists($default);
+            $defaultExists = $default ? \file_exists($default) : false;
 
             if ($sha1sum && $uploadedExists) {
                 if ($sha1sum !== @\sha1_file($uploaded)) {

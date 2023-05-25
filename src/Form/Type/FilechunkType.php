@@ -186,7 +186,7 @@ class FilechunkType extends AbstractType
 
         // @todo for pure symfony forms, remove htmlentities() because twig
         //   autoescape will be set to on, and JSON causes problems
-        $builder->get('fid')->addModelTransformer(new CallbackTransformer('htmlentities', function ($value) { return $value; }));
+        $builder->get('fid')->addModelTransformer(new CallbackTransformer(fn (?string $value) => $value ? \htmlentities($value) : null, function ($value) { return $value; }));
     }
 
     /**
