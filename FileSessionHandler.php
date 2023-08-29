@@ -101,7 +101,9 @@ final class FileSessionHandler
      */
     public function isTokenValid(string $token) : bool
     {
-        return $this->getSession()->has(self::SESSION_TOKEN) && $this->session->get(self::SESSION_TOKEN) === $token;
+        $session = $this->getSession();
+
+        return $session->has(self::SESSION_TOKEN) && $session->get(self::SESSION_TOKEN) === $token;
     }
 
     /**

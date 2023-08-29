@@ -13,6 +13,7 @@ parameters:
 services:
 
     MakinaCorpus\FilechunkBundle\Controller\UploadController:
+        autowire: true
         public: false
         tags: ["controller.service_arguments"]
 
